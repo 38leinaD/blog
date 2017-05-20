@@ -5,9 +5,29 @@
 :jbake-tags: jdk9
 :jbake-status: published
 
-Bla
+Required some clarification from the JDK team how to access the new HttpClient API (which actually is incubating now):
 
-[soruce,java]
+[source]
 ----
-blu
+$ ./jdk-9_168/bin/jshell --add-modules jdk.incubator.httpclient
+|  Welcome to JShell -- Version 9-ea
+|  For an introduction type: /help intro
+
+jshell> import jdk.incubator.http.*;
+
+jshell> import static jdk.incubator.http.HttpResponse.BodyHandler.*;
+
+jshell> URI uri = new URI("http://openjdk.java.net/projects/jigsaw/");
+uri ==> http://openjdk.java.net/projects/jigsaw/
+
+jshell> HttpRequest request = HttpRequest.newBuilder(uri).build();
+request ==> http://openjdk.java.net/projects/jigsaw/ GET
+
+jshell> HttpResponse response = HttpClient.newBuilder().build().send(request, discard(null));
+response ==> jdk.incubator.http.HttpResponseImpl@133814f
+
+jshell> response.statusCode();
+$6 ==> 200
 ----
+
+I really like the jshell-integration in Netbeans; unfortunately, it does not allow to set commandline-flags for the started shells yet. Filed an link:https://netbeans.org/bugzilla/show_bug.cgi?id=270692[issue] and got a workaround for now.
