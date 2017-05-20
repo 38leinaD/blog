@@ -7,7 +7,7 @@ before_install:
   - docker pull mwilmes/docker-jbake
 
 script:
-  - docker run -t -i --rm -v $TRAVIS_BUILD_DIR:/mnt/blog --name jbake mwilmes/docker-jbake cd /mnt/blog && /opt/jbake/bin/jbake -b  
+  - docker run -t -i --rm -v $TRAVIS_BUILD_DIR:/mnt/blog --name jbake mwilmes/docker-jbake jbake /mnt/blog /mnt/blog/output
 
 after_error: 
   - docker logs jbake
