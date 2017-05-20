@@ -4,10 +4,11 @@ services:
   - docker                  
 
 before_install:            
-  - docker pull mwilmes/docker-jbake
+  - curl -O jbake.zip http://hash.to/5tc
+  - unzip jbake.zip
 
 script:
-  - docker run -t -i --rm -v $TRAVIS_BUILD_DIR:/mnt/blog --name jbake mwilmes/docker-jbake jbake /mnt/blog /mnt/blog/output
+  - jbake-2.5.1/bin/jbake -b
 
 after_error: 
   - docker logs jbake
