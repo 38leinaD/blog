@@ -1,0 +1,18 @@
+= Stacktrace in Eclipse Debugger
+.
+2017-04-12
+:jbake-type: post
+:jbake-tags: eclipse
+:jbake-status: published
+
+How to see the stacktrace for an exception-variable within the eclipse debugger?
+
+Go to Preferences / Java / Debug / Detail Formatter; Add for Throwable:
+
+[source,java]
+----
+java.io.Writer stackTrace = new java.io.StringWriter();
+java.io.PrintWriter printWriter = new java.io.PrintWriter(stackTrace);
+printStackTrace(printWriter);
+return getMessage() + "\n" + stackTrace; 
+----

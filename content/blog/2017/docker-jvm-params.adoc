@@ -1,0 +1,14 @@
+= Docker JVM Memory Settings
+.
+2017-05-01
+:jbake-type: post
+:jbake-tags: docker, java
+:jbake-status: published
+
+Read link:http://trustmeiamadeveloper.com/2016/03/18/where-is-my-memory-java/[this],
+link:http://blog.jelastic.com/2017/04/13/java-ram-usage-in-containers-top-5-tips-not-to-lose-your-memory/[this] and
+link:https://blogs.oracle.com/java-platform-group/java-se-support-for-docker-cpu-and-memory-limits[this].
+
+* JDK9 has `-XX:+UseCGroupMemoryLimitForHeap`
+* JDK8 pre 131: Always specify `-Xmx1024m` and `-XX:MaxMetaspaceSize`
+* JDK8 since 131: `-XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap`

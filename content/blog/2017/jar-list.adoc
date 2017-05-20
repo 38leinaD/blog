@@ -1,0 +1,12 @@
+title=List classes in Jar
+date=2017-01-29
+type=post
+tags=bash
+status=published
+~~~~~~
+
+List all classes in a jar-file:
+
+----
+$ unzip -l MyJar.jar "*.class" | tail -n+4 | head -n-2 | tr -s ' ' | cut -d ' ' -f5 | tr / . | sed 's/\.class$//'
+----

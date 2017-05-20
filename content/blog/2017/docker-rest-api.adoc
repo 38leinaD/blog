@@ -1,0 +1,12 @@
+= Docker Rest API
+.
+2017-05-01
+:jbake-type: post
+:jbake-tags: docker
+:jbake-status: published
+
+SSL keys are at `/cygdrive/c/Users/<username>/.docker/machine/machines/default`
+
+----
+ curl --insecure -v --cert cert.pem --key key.pem -X GET https://192.168.99.100:2376/images/json
+----

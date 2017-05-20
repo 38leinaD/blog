@@ -1,0 +1,15 @@
+title=SSH Keys
+date=2017-01-13
+type=post
+tags=bash
+status=published
+~~~~~~
+
+To connect to a remote-host without password-entry (for scripting):
+
+----
+# generate ssh keys for local (if not already done)
+$ ssh-keygen
+$ ssh-copy-id -i ~/.ssh/id_rsa.pub <remote-host>
+$ ssh <remote-host>
+----

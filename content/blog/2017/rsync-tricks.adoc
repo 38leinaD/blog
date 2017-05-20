@@ -1,0 +1,18 @@
+title=rsync tricks
+date=2017-01-20
+type=post
+tags=bash
+status=published
+~~~~~~
+
+This command removes files that have been removed from the source directory but will not overwrite newer files in the destination:
+
+----
+$ rsync -avu --delete sourcedir/ /cygwin/e/destdir/
+----
+
+To rsync to another system with ssh over the net:  
+
+----
+$ rsync -avu --delete -e ssh sourcedir/ username@machine:~/destdir/
+----

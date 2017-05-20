@@ -1,0 +1,771 @@
+= Developer Diary 2016
+.
+2016-01-01
+:jbake-type: page
+:jbake-tags: git
+:jbake-status: published
+
+== Tuesday, 03.01.2017
+
+Read link:https://www.gitbook.com/book/thomasnield/rxjavafx-guide/details[Learning RxJava with JavaFX].
+
+== Friday, 30.12.2016
+
+Succesfully deployed my first AWS lambda. Actually it was tricky to access it externally via API gateway due to unclear link:http://docs.aws.amazon.com/lambda/latest/dg/java-programming-model.html[documentation].
+
+== Wednesday, 28.12.2016
+
+* link:https://www.youtube.com/watch?v=P8I7ard9p9w[How to bake reactive behavior into your Java EE applications]
+
+== Thursday, 22.12.2016
+
+.Get the plantuml source back from a PNG
+----
+java -jar C:/dev/tools/plantuml.jar -metadata startup.png
+----
+
+== Wednesday, 21.12.2016
+
+* So, coloring output of cargo under cygwin works... link:https://github.com/rust-lang/cargo/issues/3077#issuecomment-245310626[somehow].
+
+== Sunday, 18.12.2016
+
+* link:https://www.youtube.com/watch?v=k3D0cWyNno4[Learning RxJava (for Android) by example]
+* link:https://www.youtube.com/watch?v=htIXKI5gOQU[Exploring RxJava 2 for Android]
+
+== Tuesday, 13.12.2016
+
+* link:https://www.youtube.com/watch?v=_t06LRX0DV0[RxJava at Netflix]
+* link:http://techblog.netflix.com/2013/02/rxjava-netflix-api.html[netflix blog on rxjava]
+* link:https://www.erikheemskerk.nl/event-sourcing-cqrs-querying-read-models/?utm_content=buffer908c5[Event Sourcing: CQRS and querying using read models]
+* link:https://github.com/ReactiveX/RxJava/wiki/What%27s-different-in-2.0[RxJava 2]
+
+== Monday, 05.12.2016
+
+* link:https://medium.com/reactive-programming/what-is-reactive-programming-bc9fa7f4a7fc#.kgqc4qm8t[great article] about reactive programming
+* Great read: diploma thesis on link:http://berb.github.io/diploma-thesis/index.html[Concurrent Programming for Scalable Web Architectures]. Sums it up nicely.
+* link:https://www.youtube.com/watch?v=67mezK3NzpU[100% Stateless with JWT]
+* link:https://www.youtube.com/watch?v=LsM_i-chL3k[Maven - your ultimate CD tool]
+
+== Sunday, 04.12.2016
+
+* link:http://www.arc42.de/[arc42]
+
+== Tuesday, 29.11.2016
+
+* link:http://www.bailis.org/blog/linearizability-versus-serializability/[linearizability-versus-serializability]
+
+== Sunday, 20.11.2016
+
+* Interesting thoughts about CDI. have to follow link:https://lairdnelson.wordpress.com/[this blog] by Laird Nelson.
+
+== Saturday, 19.11.2016
+
+* Watched link:https://www.youtube.com/watch?v=DJDBl0vURD4[Testing made sweet with a Mockito]
+** Capture method-arguments of mock-method-calls is possible.
+** Avoid creating new objects via "new". hard to test.
+** Avoid static methods. Hard to test.
+** Avoid singletons
+** Isolte non-testable code. E.g. views in MVP
+** Dont use mockito spies. Arggument is that tests might not be isolted if "real logic" is executed.
+* Write custom Mockito matcher. link:http://jeroenmols.com/blog/2016/10/31/mockitomatchers/[here]
+* gradle build can be profiled; report is generated. nice. link:http://jeroenmols.com/blog/2016/09/01/coveragecost/[blog]
+
+== Friday, 18.11.2016
+
+* Watched link:https://www.youtube.com/watch?v=LsM_i-chL3k[Maven for CDI] Devoxx talk. Sources are link:https://github.com/kubamarchwicki/devoxx-tools-maven[here]. Need to look into it further.
+* Building asciidoc with maven
+[source,xml]
+----
+<profile>
+    <id>readme</id>
+    <properties>
+        <asciidoctor.maven.plugin.version>1.5.3</asciidoctor.maven.plugin.version>
+        <asciidoctorj.version>1.5.4</asciidoctorj.version>
+        <asciidoctorj.diagram.version>1.3.1</asciidoctorj.diagram.version>
+        <jruby.version>1.7.21</jruby.version>
+    </properties>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.asciidoctor</groupId>
+                <artifactId>asciidoctor-maven-plugin</artifactId>
+                <version>${asciidoctor.maven.plugin.version}</version>
+                <dependencies>
+                    <!-- Comment this section to use the default jruby artifact provided by the plugin -->
+                    <dependency>
+                        <groupId>org.jruby</groupId>
+                        <artifactId>jruby-complete</artifactId>
+                        <version>${jruby.version}</version>
+                    </dependency>
+                    <!-- Comment this section to use the default AsciidoctorJ artifact provided by the plugin -->
+                    <dependency>
+                        <groupId>org.asciidoctor</groupId>
+                        <artifactId>asciidoctorj</artifactId>
+                        <version>${asciidoctorj.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.asciidoctor</groupId>
+                        <artifactId>asciidoctorj-diagram</artifactId>
+                        <version>${asciidoctorj.diagram.version}</version>
+                    </dependency>
+                </dependencies>
+                <executions>
+                    <execution>
+                        <id>output-html</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>process-asciidoc</goal>
+                        </goals>
+                        <configuration>
+                            <sourceDirectory>.</sourceDirectory>
+                            <sourceDocumentName>README.adoc</sourceDocumentName>
+                            <backend>html</backend>
+                            <attributes>
+                                <!--toc>left</toc-->
+                            </attributes>
+                        </configuration>
+                    </execution>
+                </executions>
+                <configuration>
+                    <requires>
+                        <require>asciidoctor-diagram</require>
+                    </requires>
+                    <attributes>
+                        <!--graphvizdot>C:\dev\tools\graphviz-2.38\bin\dot.exe</graphvizdot-->
+                    </attributes>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</profile>
+----
+
+== Sunday. 13.11.2016
+
+* link:https://www.youtube.com/watch?v=WQPcuCEnipE[JavaFx@Devoxx]
+* Tried out Websphere Liberty Netbeans plugin. Built it myself for 8.2 but does not work. link:https://github.com/tjmcmanus/NetbeansLibertyPlugin/issues/19[Issue filed].
+
+== Saturday, 12.11.2016
+
+* link:https://struberg.wordpress.com/2015/02/18/cdi-in-ears/[Intereting read] on how e.g. wildfly and websphere handle the CDI BeanManager differently.
+* link:http://blog.kdgregory.com/2016/11/git-behind-curtain-what-happens-when.html[Git behind the curtain]. Insightful.
+
+== Tuesday, 08.11.2016
+
+* link:https://fxdocs.github.io/docs/index.html[Great intro] to VBox and HBox in JavaFx.
+
+== Tuesday, 01.11.2016
+
+* Watched link:https://www.youtube.com/watch?v=7is1WTtbZj4[this] talk on the scenebuilder. Learned some neat tricks.
+* Launch mintty from eclipse:
+
+----
+$ cat .metadata/.plugins/org.eclipse.debug.core/.launches/Open\ shell.launch
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<launchConfiguration type="org.eclipse.ui.externaltools.ProgramLaunchConfigurationType">
+<listAttribute key="org.eclipse.debug.ui.favoriteGroups">
+<listEntry value="org.eclipse.ui.externaltools.launchGroup"/>
+</listAttribute>
+<stringAttribute key="org.eclipse.ui.externaltools.ATTR_LOCATION" value="C:\cygwin64\bin\mintty.exe"/>
+<stringAttribute key="org.eclipse.ui.externaltools.ATTR_TOOL_ARGUMENTS" value="-e /bin/xhere /bin/bash.exe &quot;${selected_resource_loc}&quot;"/>
+</launchConfiguration>
+----
+
+* use of graylog is trivial
+** link:https://hub.docker.com/r/graylog2/server/[docker-image]
+** link:https://github.com/t0xa/gelfj/blob/master/README.md[log4j-appender]
+** link:https://www.genuitec.com/centralize-web-app-logs-with-graylog/[all-in-one description]
+
+.log4j.properties
+----
+log4j.appender.graylog2=org.graylog2.log.GelfAppender
+# GELF UPD
+log4j.appender.graylog2.graylogHost=192.168.99.100
+log4j.appender.graylog2.graylogPort=12201
+log4j.appender.graylog2.originHost=loggenerator-server-ip
+log4j.appender.graylog2.layout=org.apache.log4j.PatternLayout
+log4j.appender.graylog2.additionalFields={'environment': 'DEV', 'application': 'MyAPP'}
+log4j.appender.graylog2.extractStacktrace=true
+log4j.appender.graylog2.addExtendedInformation=true
+log4j.appender.graylog2.facility=gelfappender-test
+----
+
+** Also works generically for all different loggers: link:https://github.com/mp911de/logstash-gelf[logstash-gelf]
+
+
+
+[source,xml]
+.pom.xml
+----
+<dependency>
+    <groupId>log4j</groupId>
+    <artifactId>log4j</artifactId>
+    <version>1.2.17</version>
+</dependency>
+<dependency>
+    <groupId>org.graylog2</groupId>
+    <artifactId>gelfj</artifactId>
+    <version>1.1.13</version>
+</dependency>
+----
+
+== Tuesday, 25.10.2016
+
+* link:https://www.youtube.com/watch?v=GNmU5vwZua8[Great talk] on hijacking HTTP sessions. Very enlightening.
+** Prefer cookies over URL rewrite with JSESSIONID
+** web.xml cookie flags: secure & http-only
+** use https
+** validate input to protect against XSS
+** protected against session-fixation by creating new session-id after login
+** protected against crsf by unique token in each request
+
+== Saturday, 22.10.2016
+
+* Watched this great intro to Hystrix from link:https://www.youtube.com/watch?v=VuCYkY7pFk8[JavaOne]. Also has sources on link:https://github.com/billyy/Hystrix-Tutorial[github].
+* link:https://www.youtube.com/watch?v=ofxbypDz4h8[Monolith] to reactive; great talk explaining fundamental concept based on lagom.
+
+== Wednesday, 19.10.2016
+
+Does nbm maven plugin not support to install custom plugins my plugin depends on when i use the nbm:cluster goal? Seems so, need to run this after clean build:
+
+----
+cp /Users/daniel/Library/Application\ Support/NetBeans/8.2/modules/org-netbeans-gradle-project.jar modules/
+cp /Users/daniel/Library/Application\ Support/NetBeans/8.2/config/Modules/org-netbeans-gradle-project.xml config/Modules/
+cp -R /Users/daniel/Library/Application\ Support/NetBeans/8.2/modules/ext modules/ext
+----
+
+== Friday, 7.10.2016
+
+* link:https://www.youtube.com/watch?v=BZVzanL9kJk[Faster Java EE Builds with Gradle]
+* link:https://www.youtube.com/watch?v=XGGMO0lrsNE[Gradle Support in NetBeans: A State of the Union]
+
+== Thursday, 6.10.2016
+
+* Great intro to event-sourcing: link:https://www.youtube.com/watch?v=53DVkaW5Fb0[Handling Eventual Consistency in JVM Microservices with Event Sourcing]
+* Arquillian with ant: link:https://github.com/mojavelinux/arquillian-showcase/tree/master/cdi/[here]
+
+== Wednesday, 5.10.2016
+
+* link:https://www.youtube.com/watch?v=LgR9ByD1dEw[Collections Refueled]
+* link:https://www.youtube.com/watch?v=-XI9kJGCHtM[The Diabolical Developers Guide to Performance Tuning]
+* link:https://www.youtube.com/watch?v=7BC5k9lEOWE[Thinking in Parallel]
+
+== Tuesday, 4.10.2016
+
+* link:https://www.youtube.com/watch?v=Th9faGLhQoM[Java EE 8 Update].
+* link:https://www.youtube.com/watch?v=-czp0Y4Z36Y[Great talk] on "Don't Build a Distributed Monolith".
+* link:https://www.youtube.com/watch?v=pmmP-7d6pWw[Java Libraries You Can't Afford to Miss]
+
+== Monday, 3.10.2016
+
+Started going through JavaOne sessions. Watched link:https://www.youtube.com/watch?v=ztoT5wXxJ5s[Ask the architects].
+
+== Sunday, 18.09.2016
+
+Watched great link:https://apexapps.oracle.com/pls/apex/f?p=44785:141:9169439838588::::P141_PAGE_ID,P141_SECTION_ID:250,1807[Java 8 Lambdas MOOC].
+
+== Sunday, 11.09.2016
+
+Started skimming through Javaworld talks. Watched link:https://2016.javazone.no/program/java-ee-extendable-to-functional[great talk] by David Blevins.
+
+== Friday, 9.09.2016
+
+Finished watching great link:https://www.youtube.com/watch?v=iJVW7v8O9BU[microservices] talk by arun gupta.
+
+link:https://www.youtube.com/watch?v=3MVN4XCQzn0[Great talk] on eclipse PDE tricks.
+
+* Plugin-Spy: ALT+SHIFT+F1 to see details of the selected plugin.
+* Plugin Registry to see plugins and extension points. There is also an CTRL+SHIFT+T like dialog.
+* DisplayView for debugging is nice
+* Add plugins to CTRL+SHIFT+T class search via context menu in plugin-view
+
+== Sunday, 21.08.2016
+
+link:https://virtualjug.com/10-useful-asciidoctor-tips/[Asciidoctor tips]. link:https://github.com/asciidoctor/asciidoctor-gradle-plugin[gradle-plugin] with continous build feature is great.
+
+Had a first look into jigsaw: link:http://blog.codefx.org/java/dev/jigsaw-hands-on-guide/[here] and the link:http://openjdk.java.net/projects/jigsaw/quick-start[official quick starter guide].
+
+link:https://www.youtube.com/watch?v=5r6yzFEXajQ[Good stuff] on vim and tmux.
+
+== Thursday, 18.08.2016
+
+Ok, link:http://adaptivepatchwork.com/2012/03/01/mind-the-end-of-your-line/[this] seems to sum it up quiet nicely what options there are with git to handle CR/LF problems. .gitattributes is the solution. Legacy old way
+
+----
+core.autocrlf = input
+core.safecrlf = warn
+----
+
+Two interesting approaches to integration-test large JavaEE applications:
+
+* link:https://moelholm.com/2016/08/11/arquillian-testing-legacy-applications/[1]: Deploy tests next to EAR using wildfly co-deployments. Deploy EAR once and only deploy tests as seperate wars.
+* link:https://rpestano.wordpress.com/2015/11/12/the-simplest-micro-deployment-arqtip-2/[2]: Deploy prebuilt EAR from Arquillian via file-ref.
+
+I like link:http://www.miroslavkopecky.com/2016/08/java-8-how-to-create-jar-without-ide.html[this] even though it is dead simple stuff. But if you have a simple jar to build, sometimes even ant/maven are overkill. Just a two-line shell-script is fine.
+
+----
+javac -cp ./src/main/java ./src/main/java/com/exec/one/*.java -d ./out/
+jar cvfm ExecutableOne.jar ./src/main/resources/META-INF/MANIFEST.MF -C ./out/ .
+----
+
+== Wednesday, 17.08.2016
+
+Watch link:https://www.youtube.com/watch?v=5cNyrkjJ5KY[vJug talk] on bytecode.
+
+== Tuesday, 16.08.2016
+
+Read link:https://dzone.com/articles/testing-a-self-contained-javaee-app-using-arquillian[this] on JavaEE testing via arquillian and docker. It does not discuss Arquillian Cube but uses link:https://github.com/testcontainers/testcontainers-java[testcontainers]. There even is a link:http://testcontainers.viewdocs.io/testcontainers-java/usage/webdriver_containers/[RemoteWebDriver] to interact with dockerized selenium-based browser-tests. I have to check link:https://github.com/testcontainers/testcontainers-java/blob/master/modules/selenium/src/main/java/org/testcontainers/containers/BrowserWebDriverContainer.java[this] in more detail.
+
+link:https://dzone.com/articles/testing-the-hibernate-layer-with-docker[This] prior article is also nice to see how easily testcontainers can start a DB from an arquillian test.
+
+link:https://blog.frankel.ch/starting-with-cucumber-for-end-to-end-testing/[End-2-end testing with Selenium und Cucumber]. Nice!
+
+== Monday, 15.08.2016
+
+Watched link:https://www.youtube.com/watch?v=MYP56QJpDr4[Git From the Bits Up].
+Creating a low-level commit:
+
+----
+git init
+echo "only work and no play make..." | git hash-object --stdin -w
+git cat-file -p ea5eb97b094197070c5865d5e17e8e63c3ee285d
+git update-index --add --cacheinfo 100644 ea5eb97b094197070c5865d5e17e8e63c3ee285d jonny.txt
+git write-tree
+git cat-file  -p 6b5f7b67962e61c3f0dbe80ac8092713b5f74f2f
+git commit-tree 6b5f7b67962e61c3f0dbe80ac8092713b5f74f2f -m "Initial commit"
+git cat-file -p 9c0f5e1774d6c4abdad907ba92d4c53d76328fe1
+echo 9c0f5e1774d6c4abdad907ba92d4c53d76328fe1 > .git/refs/heads/master
+git log
+git checkout HEAD -- jonny.txt
+git status
+----
+
+== Sunday, 14.08.2016
+
+Improved my bash with link:https://lug.fh-swf.de/shell/#bookmarks[bookmarks]. Loving it.
+Also, nice talk on link:https://www.youtube.com/watch?v=-kVzV6m5_Qg[Git Mastery].
+
+== Saturday, 13.08.2016
+
+Watched this talk on link:https://www.youtube.com/watch?v=wtau7sNjYgE[Advanced Git].
+Checked link:https://github.com/mikemcquaid/dotfiles/blob/master/gitconfig[this] for good settings.
+
+== Friday, 12.08.2016
+
+Great talk on git data-model link:https://www.youtube.com/watch?v=sevc6668cQ0[here].
+
+== Thursday, 11.08.2016
+
+Watched link:https://www.youtube.com/watch?v=262lTMIpYQE[Demistifyng dynamicinvoke] by Venkat.
+Watched nice link:https://www.youtube.com/watch?v=duqBHik7nRo[Advanced Git].
+
+== Monday, 08.08.2016
+
+link:https://www.youtube.com/watch?v=52XMd5tCEnQ[Busy Java Developer's Guide to JVM Bytecode].
+
+== Sunday, 07.08.2016
+
+Finished link:http://shop.oreilly.com/product/0636920025368.do[Continuous Enterprise Development in Java]. Great book on Arquillian.
+
+== Saturday, 06.08.2016
+
+Iteresting link:https://eng.uber.com/mysql-migration/[article] bu Uber engineers on usage of Postgres and MySQL with insight in technology. Add nice link:http://use-the-index-luke.com/blog/2016-07-29/on-ubers-choice-of-databases[article] putting it in perspective.
+
+== Friday, 05.08.2016
+
+Nice commandline-utility to track file changes. link:https://github.com/thekid/inotify-win[inotifywait]. Works great under cygwin.
+
+== Thursday, 04.08.2016
+
+link:http://www.eecs.qmul.ac.uk/~mmh/APD/bloch/[Effective Java Programming Language Guide] is still the best. The free chapter on generics should be read by every Java programmer.
+
+* PECS stands for producer-extends, consumer-super
+* Do not use wildcard types as return types.
+* if a type parameter appears only once in a method declaration, replace it with
+a wildcard
+
+Nice link:https://blog.jetbrains.com/upsource/2016/08/03/what-to-look-for-in-java-8-code/[article] for how to use the Java 8 API.
+
+== Tuesday, 02.08.2016
+
+link:https://www.infoq.com/articles/Easily-Create-Java-Agents-with-ByteBuddy[Great read] on java agents and byte-code-manipulation with byte-buddy.
+
+== Monday, 01.08.2016
+
+Interfacing with the wildfly http management interface with authentication enabled:
+
+[source,java]
+----
+Authenticator.setDefault(new Authenticator() {
+    protected PasswordAuthentication getPasswordAuthentication() {
+        return new PasswordAuthentication("username", "password".toCharArray());
+    }
+});
+
+URL url = new URL("http://localhost:9990/management");
+
+HttpURLConnection con = (HttpURLConnection) url.openConnection();
+con.setRequestMethod("POST");
+con.setRequestProperty("Content-Type", "application/json");
+con.setDoOutput(true);
+try (DataOutputStream wr = new DataOutputStream(con.getOutputStream())) {
+    wr.write("{\"address\":[\"subsystem\",\"naming\"],\"operation\":\"jndi-view\",\"json.pretty\":1}"
+            .getBytes());
+}
+
+try (BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()))) {
+    String inputLine;
+    while ((inputLine = in.readLine()) != null) {
+        System.out.println(inputLine);
+    }
+}
+----
+
+== Sunday, 31.07.2016
+
+Did some JavaFX hacking.
+
+== Saturday, 30.07.2016
+
+Watched link:https://www.youtube.com/watch?v=t8sQw3pGJzM[Do you really get class loaders?]
+
+* Check MyClass.class.getClassLoader().getResource(...) to load class as resource and see wher located.
+* Use javap -private to see class details
+* Use `-verbose:class`
+* -XX:+HeapDumpOnOutOfMemoryError (use eclipse memory analyzer)
+
+Watched link:https://www.youtube.com/watch?v=rPyqB1l4gko[JVM Bytecode for Dummies]
+
+* javap -c -verbose
+* link:https://github.com/headius/bitescript[bitescript]: Ruby DSL that looks close to bytecode
+
+== Friday, 29.07.2016
+
+Watched link:https://www.youtube.com/watch?v=McTZtyb9M38[Real-World Strategies for Continuous Delivery with Maven and Jenkins].
+
+* Continous Delivery: Every build could be a release. Maven has concept of SNAPSHOTs that by itself are not releases. Not reproduceable. Thus, generate releases each time instead of SNAPSHOT.
+* Also slow: You do link:https://maven.apache.org/maven-release/maven-release-plugin/examples/prepare-release.html[mvn release:prepare] and mvn release:perform seperately. So, two times compile, test, ... cycle
+* Split up unit- and integration-tests. Run unit tests in test-phase and integration-tests in integration-test phase. Fail fast on unit-tests.
+* Multi-module builds: mvn deploy would deploy first artifact and then might fail on the second. -> Do mvn deploy:deploy after all mvn install done.
+* Generate JaCoCo coverage report after integration-test phase
+* dont run mvn site in build because slow. instead e.g. call mvn pmd:check , mvn findbugs:check, mvn checkstyle:checkstyle directly. And fail build on violations.
+* Don't use mvn release plugin. Does not fit nicely. SNAPSHOTS are not versioned. So, release is needed to push through pipeline. If always release, then maybe blocking the pipeline. If always SNAPSHOT first, it is cluncy because do stuff again for release -> Work with SNAPSHOT but give it a version-number/buildnumber as soon as it enters the pipeline. Use mvn versions plugin (mvn versions:set -DnewVersion=1.0.203)
+
+Watched link:https://plus.google.com/events/c8l73hhgo1cuhjbc6sim2qegoak[Hacking on Wildfly 9].
+
+Build only specific reactor project and specific test to execute:
+
+----
+mvn clean install -pl testsuite/standalone/ -Dtest=MyTestClass
+----
+
+Created my link:http://openjdk.java.net/projects/code-tools/jmh/[jmh] benchmark to check on some IO performance. Neat project and nice maven intregration/archetype.
+
+[source,java]
+----
+@BenchmarkMode(Mode.AverageTime)
+public class FileAccessTest {
+
+	@Benchmark
+	public void testFileAccess() {
+		//...
+	}
+}
+----
+
+== Thursday, 28.07.2016
+
+Set mem limits and enable GC-log:
+
+----
+-Xms1024m -Xmx1024m -XX:MaxMetaspaceSize=128m -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -Xloggc:gc.log
+----
+
+Watched link:https://www.youtube.com/watch?v=aKGYa6Y9r60[JMX: Much More Than Just Application Monitoring].
+
+== Wednesday, 27.07.2016
+
+So, no idea why, but to make eclipse not behave strange sometimes, setting -vm with JDK path in eclipse.ini (otherwise, JBoss forge was complaining that it could not install arquillian plugin because not able to compile):
+
+----
+-vm
+C:\Program Files\Java\jdk1.8.0_71\bin\javaw
+----
+
+Looked into UI-testing with arquillian. Did link:http://arquillian.org/guides/functional_testing_using_graphene/[this] tutorial. Also got ref link:https://docs.jboss.org/author/display/ARQ/Drone[here].
+
+Set up my nexus/sonatype access. Maven stuff described link:http://central.sonatype.org/pages/apache-maven.html[here].
+
+== Tuesday, 26.07.2016
+
+Watched link:https://vimeo.com/52831373[Immutability Changes Everything].
+
+Looking into JBoss Forge and integration with link:https://docs.jboss.org/author/display/ARQ/Reference+Guide[Arquillian]. Really nice.
+
+By the way, this seems to be the latest adapter to use for wildfly (JBoss Tools use an older one):
+
+[source,xml]
+----
+<dependency>
+  <groupId>org.wildfly.arquillian</groupId>
+  <artifactId>wildfly-arquillian-container-remote</artifactId>
+  <version>1.1.0.Final</version>
+  <scope>test</scope>
+</dependency>
+----
+
+Watched link:https://www.youtube.com/watch?v=0hN6XJ69xn4[Advanced Annotation Processing with JSR 269]. Sources link:https://github.com/jtulach/Annotations[here]. And more reading link:http://www.slideshare.net/ltearno/gwt-and-jsr-269s-pluggable-annotation-processing-api[here] and link:https://deors.wordpress.com/2011/10/08/annotation-processors/[here].
+
+Got the annotation processor to work in eclipse after manual activation of annoatations jar and setting to batch-mode. But code-completion not yet working.
+
+[source,java]
+----
+@SupportedAnnotationTypes({"example.ServiceConfig"})
+@SupportedSourceVersion(SourceVersion.RELEASE_8)
+public class Processor extends AbstractProcessor {
+	@Override
+	public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+		for (Element element : roundEnv.getElementsAnnotatedWith(ServiceConfig.class)) {
+			processingEnv.getMessager().printMessage(Kind.WARNING, "++Found: " + element.getSimpleName(), null);
+		}
+		return true;
+	}
+}
+----
+
+
+== Monday, 25.07.2016
+
+JCA deep-dive for me today. Implemented own small file-JCA-connector based on link:http://connectorz.adam-bien.com[connectorz]. Also found link:https://github.com/dlmiles/full-example-ee7-jca-eis[this] resource interesting.
+
+Also, watched link:http://blog.eisele.net/2016/07/cqrs-with-java-and-lagom.html?utm_source=dlvr.it&utm_medium=twitter[talk] on CQRS.
+
+== Saturday, 23.07.2016
+
+Reading link:http://www.infoq.com/resource/minibooks/domain-driven-design-quickly/en/pdf/DomainDrivenDesignQuicklyOnline.pdf[dzone's summary of Domain Driven Design]. Nice recap.
+
+== Friday, 22.07.2016
+
+Great read on link:http://martinfowler.com/articles/microservices.html[microservices]. link:https://ucvox.files.wordpress.com/2012/11/113617905-scaling-agile-spotify-11.pdf[Spotify's organizational structure].
+
+== Thursday, 21.07.2016
+
+Watched link:https://www.youtube.com/watch?v=ct9sIsrnE9Y[vJug session on Junit 5].
+
+Read up on caching with JPA. Nice summary link:https://en.wikibooks.org/wiki/Java_Persistence/Caching[here]: Cache-coordination versus distributed caching, transactional versus non-transactional caches...
+
+== Monday, 18.07.2016
+
+Watched latest link:https://www.youtube.com/watch?v=0AsyLVd6yV4[airhacks episode]. Also read up on link:http://martinfowler.com/articles/serverless.html[serverless architectures]. Also, link:https://medium.com/@asimaslam/why-companies-adopt-microservices-and-how-they-succeed-2ad32f39c65a#.2zjnouynv[this] one adption of the microservice approach.
+
+
+== Sunday, 17.07.2016
+
+Skimmed through some talks today:
+
+* link:https://www.youtube.com/watch?v=1HyT0Ool56M[Cashless 3 0 Java EE 7 Proves Effective for Mission Critical E Payment Systems]
+* link:https://www.youtube.com/watch?v=POFWO0eBVSk&index=105&list=PLPIzp-E1msrZz6RNdbDiK0nKuxAUZPs77[Are You Aware of the /bin of Your JDK?]: javap, jps, jinfo, jmap, jhat, stack -l (for monitors and owners), (or kill -3), jstat (like iostat), jcmd
+* link:https://www.youtube.com/watch?v=uuGnAV8-m4o&index=89[Java EE Revisits GoF Design Patterns]
+* link:https://www.youtube.com/watch?v=NIQEfai1HPY&index=84[Java EE in Practice at Lufthansa Industry Solutions]: Implementing ViewScoped in Java EE 6
+* link:https://www.youtube.com/watch?v=mIKq973M47Y[Taming Microservices Testing with Docker and Arquillian Cube]
+
+== Saturday, 16.07.2016
+
+Watched link:https://www.oreilly.com/learning/whats-missing-from-microservices[microservices talk]. Slides are link:http://www.slideshare.net/adriancockcroft/microservices-whats-missing-oreilly-software-architecture-new-york[here].
+
+Especially useful was the part on cascading timeouts: first system has biggest timeout; budget gets small for services upstream.
+
+== Friday, 15.07.2016
+
+Forked/checked out jgit and egit. That was some sweat...
+
+Neat thing from the link:https://wiki.eclipse.org/EGit/Contributor_Guide[Developer Notes]: Using a .p2f file to import/export required plugins (File/Import/Install/...). Maybe i don't need a bash-script :-)
+
+== Thursday, 14.07.2016
+
+Provision eclipse plugins from the commandline (cygwin/bash/win7). Here for eclipse neon update-sites:
+
+[source,bash]
+----
+// download a plugin-zip; as an example how to provision a local zip-file
+curl -L -J -O -x http://proxy.wincor-nixdorf.com:81 https://github.com/java-decompiler/jd-eclipse/releases/download/v1.0.0/jd-eclipse-site-1.0.0-RC2.zip
+
+pushd eclipse
+EXE=./eclipsec.exe
+
+# Eclemma
+ECLEMMA_IU=$($EXE -application org.eclipse.equinox.p2.director -noSplash -repository http://update.eclemma.org -list | grep EclEmma | cut -d= -f1)
+echo "Installing ${ECLEMMA_IU}..."
+$EXE -application org.eclipse.equinox.p2.director -noSplash -repository http://update.eclemma.org -installIUs ${ECLEMMA_IU}
+
+# Plantuml
+$EXE -application org.eclipse.equinox.p2.director -noSplash -repository http://plantuml.sourceforge.net/updatesitejuno/ -installIU net.sourceforge.plantuml
+
+# AspectJ
+$EXE -application org.eclipse.equinox.p2.director -noSplash -repository http://download.eclipse.org/tools/ajdt/46/dev/update -installIU org.eclipse.ajdt.feature.group
+
+# Groovy
+$EXE -application org.eclipse.equinox.p2.director -noSplash -repository http://dist.springsource.org/snapshot/GRECLIPSE/e4.5 -installIUs org.codehaus.groovy.eclipse.feature.feature.group
+
+# Ivy
+$EXE -application org.eclipse.equinox.p2.director -noSplash -repository http://www.apache.org/dist/ant/ivyde/updatesite -installIUs org.apache.ivyde.feature.feature.group
+# ivy settings; rootdir und externalibs.props
+
+# Java Decompiler; example for a locally zipped plugin
+set +H
+$EXE -application org.eclipse.equinox.p2.director -noSplash -repository jar:file:/$(cygpath -m ../jd-eclipse-site-1.0.0-RC2.zip)!/ -installIUs jd.ide.eclipse.feature.feature.group$EXE -application
+set -H
+
+JBOSS_UPDATE_SITE="http://download.jboss.org/jbosstools/neon/stable/updates/"
+
+# JBoss Tools - General Tools
+GENERAL_TOOLS=$($EXE -application org.eclipse.equinox.p2.director -noSplash -repository ${JBOSS_UPDATE_SITE} -list | grep GeneralTools | cut -d= -f1)
+$EXE -application org.eclipse.equinox.p2.director -noSplash -repository ${JBOSS_UPDATE_SITE} -installIUs $GENERAL_TOOLS
+
+# JBoss Tools - Web Tools
+WEB_TOOLS=$($EXE -application org.eclipse.equinox.p2.director -noSplash -repository ${JBOSS_UPDATE_SITE} -list | grep WebTools | cut -d= -f1)
+$EXE -application org.eclipse.equinox.p2.director -noSplash -repository ${JBOSS_UPDATE_SITE} -installIUs $WEB_TOOLS
+
+# JBoss Tools - Server Adapter
+$EXE -application org.eclipse.equinox.p2.director -noSplash -repository ${JBOSS_UPDATE_SITE} -installIUs grep org.eclipse.wst.server.core.serverAdapter
+
+# Forge
+$EXE -application org.eclipse.equinox.p2.director -noSplash -repository ${JBOSS_UPDATE_SITE} -installIU org.jboss.tools.forge.feature.feature.group
+
+popd
+----
+
+== Wednesday, 13.07.2016
+
+Had to debug an eclipse plugin today but did not want to run a second instance of eclipse for the debugger; so I used link:http://docs.oracle.com/javase/7/docs/technotes/tools/windows/jdb.html[jdb]. It is a nice tool. Connecting the debugger via shared-memory versus as socket is configured slightly different:
+
+----
+-Xdebug
+// shared-memory (windows only)
+-agentlib:jdwp=transport=dt_shmem,address=eclipse,server=y,suspend=n
+// socket
+-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=9999
+----
+
+Then attach via:
+
+----
+// shared-memory (windows only)
+jdb -attach eclipse -sourcepath <path>
+// socket
+jdb -connect com.sun.jdi.SocketAttach:hostname=localhost,port=9999 -sourcepath <path>
+----
+
+Some nice stuff:
+
+* `trace go methods` traces methods on a thread
+* link:https://docs.oracle.com/javase/8/docs/technotes/guides/troubleshoot/tooldescr011.html[How to] connect to a PID or a core-dump.
+
+TODO: Try to look into all the tools listed link:https://docs.oracle.com/javase/8/docs/technotes/guides/troubleshoot/tooldescr.html[here].
+
+== Tuesday, 12.07.2016
+
+TODO: The handling of proxies with jGit could be improved. Got this info from link:https://www.eclipse.org/forums/index.php?t=msg&th=1079094&goto=1737407[forums]. Will try to fix.
+
+== Monday, 11.07.2016
+
+Wireshark comes with a nice commandline-interface called `tshark`. Detailed in link:http://jvns.ca/blog/2016/03/17/tcpdump-is-amazing/[this article]. For Windows (7)/cygwin, it was a little bit more than just the line below:
+
+----
+./tshark -i LAN-Verbindung -Y 'http.request.method == "GET"' -T fields -e http.request.method -e http.request.uri -e ip.dst
+----
+
+We also need to make sure the packets go through the whole network-stack of windows as the loopback-interface cannot be sniffed out of the box:
+
+----
+// before
+route add <external-ip> <external-gateway-ip>
+// after/cleanup
+route delete <external-ip>
+----
+
+Details are described in link:http://ig2600.blogspot.de/2011/03/powershell-script-to-enable-windows-to.html[this post].
+
+== Saturday, 09.07.2016
+
+Did vert.x link:http://vertx.io/blog/posts/introduction-to-vertx.html[introductory tutorial]. Very well written.
+
+== Friday, 08.07.2016
+
+link:https://dzone.com/storage/assets/2542975-dzonerefcardz-microservicesinjava.pdf[Nice overview] on what spring has to offer for microservices.
+
+== Thursday, 07.07.2016
+
+Read link:https://www.infoq.com/articles/cap-twelve-years-later-how-the-rules-have-changed[this] articel on the shades of the CAP theorem.
+
+== Wednesday, 06.07.2016
+
+Watched link:https://www.youtube.com/watch?v=lEUZ47n9mFc[Nine "Neins"] on Java EE future. Interesting talk on what Java EE8+ should maybe adress...
+
+== Monday, 04.07.2016
+
+Getting link:https://cargotracker.java.net/[cargo-tracker] to run on wildfly 10.
+
+Default datasources in link:https://blogs.oracle.com/arungupta/entry/default_datasource_in_java_ee[Java EE 7]. But need to 'enable_lazy_load_no_trans':
+
+----
+<persistence-unit name="CargoTrackerUnit" transaction-type="JTA">
+	<properties>
+        <property name="hibernate.show_sql" value="true" />
+        <property name="hibernate.format_sql" value="true" />
+        <property name="hibernate.enable_lazy_load_no_trans" value="true" />
+        <property name="hibernate.transaction.flush_before_completion" value="true" />
+        <property name="javax.persistence.schema-generation.database.action" value="create"/>
+	</properties>
+</persistence-unit>
+----
+
+== Sunday, 03.07.2016
+
+Watched link:https://www.youtube.com/watch?v=0mzd5c6oqQI&index=43&list=PLPIzp-E1msrZz6RNdbDiK0nKuxAUZPs77[CON2385 Standardized Extension Building in Java EE with CDI and JCA]
+
+JCA offers:
+
+* Connection Management
+* Transaction Management: participate in a JTA transaction
+* Security
+* Lifecycle
+* Workload Management (hand of work to app-server threads. think runnable.)
+
+Presented sources for inbound connector link:https://github.com/robertpanzer/filesystemwatch-connector[here]. More inbound connectors from link:https://tomitribe.io/projects/chatterbox[tomitribe.io].
+
+Outbound examples from link:http://connectorz.adam-bien.com.
+
+Watched link:https://www.youtube.com/watch?v=OgfLlupOWZY&list=PLPIzp-E1msrZz6RNdbDiK0nKuxAUZPs77&index=76[TUT2376 Advanced CDI in Live Coding].
+
+* Metrics via CDI (part of Deltaspike)
+* How to enhance annotations for CDI (@InterceptorBinding, @Nobinding)
+* How to enhance a producer; e.g. caching
+* How to integrate CDI into Apache Camel
+
+== Saturday, 02.07.2016
+
+Looking into JBoss Forge. Eclipse Integration is nice: Ctrl+4 and Forge-Console view.
+
+Watched link:https://www.youtube.com/watch?v=5wX8RmBHMVY[David Blevins talk on custom CDI scopes]. Playing with link:https://tomitribe.io/projects/microscoped[microscoped].
+
+Integrated microscoped into my project for playing around; took me some time to find that I did not put the interceptor into my link:https://docs.jboss.org/cdi/learn/userguide/CDI-user-guide.html#_enabling_interceptors[beans.xml].
+
+== Thursday, 30.06.2016
+
+Watched Reza Rahman's link:https://www.captechconsulting.com/videos/testing-java-ee-applications-using-arquillian[Testing Java EE Applications using Arquillian].
+The Git repo with examples is link:https://github.com/m-reza-rahman/testing-javaee[here]
+
+== Wednesday, 29.06.2016
+
+I love link:https://www.howtoforge.com/monitoring-multiple-log-files-at-a-time-with-multitail-on-debian-lenny[multitail]! Monitor multiple logs merged into one with different color for each log (similar to docker-compose output):
+
+----
+multitail --retry-all --mergeall -ci green -i server.log -ci blue -i access-log.txt
+----
+
+== Thursday, 24.06.2016
+
+* Watched Reza Rahman's link:https://www.captechconsulting.com/videos/down-to-earth-microservices-with-vanilla-java-ee[Down-to-Earth Microservices with Vanilla Java EE]
+* Read Martin Fowler's link:http://martinfowler.com/bliki/MonolithFirst.html[MonolithFirst]

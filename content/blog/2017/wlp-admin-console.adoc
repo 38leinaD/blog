@@ -1,0 +1,30 @@
+= Websphere Liberty Admin Console
+.
+2017-05-12
+:jbake-type: post
+:jbake-tags: websphere
+:jbake-status: published
+
+----
+$ bin/installUtility install adminCenter-1.0
+----
+
+.server.xml
+[source,xml]
+----
+<!-- Enable features -->
+<featureManager>
+    <!-- ... -->
+    <feature>adminCenter-1.0</feature>
+</featureManager>
+
+<keyStore id="defaultKeyStore" password="admin123" />
+
+<basicRegistry id="basic" realm="BasicRealm">
+    <user name="admin" password="admin123" />
+</basicRegistry>
+----
+
+----
+[AUDIT   ] CWWKT0016I: Web application available (default_host): http://localhost:9090/adminCenter/
+----

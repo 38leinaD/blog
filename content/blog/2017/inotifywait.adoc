@@ -1,0 +1,14 @@
+= inotifywait
+.
+2017-03-07
+:jbake-type: post
+:jbake-tags: commandline
+:jbake-status: published
+
+Monitor filesystem-changes:
+
+----
+while inotifywait -qr /dir/to/monitor; do
+    rsync -avz /dir/to/monitor/ /dir/to/sync/to
+done
+----

@@ -1,0 +1,12 @@
+= strace
+.
+2017-05-01
+:jbake-type: post
+:jbake-tags: commandline
+:jbake-status: published
+
+Read link:https://blog.packagecloud.io/eng/2017/03/14/using-strace-to-understand-java-performance-improvement/[].
+
+----
+strace -fopen,read,close,fstat java -jar Test.jar
+----

@@ -1,0 +1,12 @@
+= Commandline HTTP-Server
+.
+2017-01-10
+:jbake-type: post
+:jbake-tags: commandline
+:jbake-status: published
+
+A very simple http-server:
+
+----
+while true ; do echo -e  "HTTP/1.1 200 OK\nAccess-Control-Allow-Origin: *\n\n $(cat index.html)" |  nc -l localhost 1500; done
+----

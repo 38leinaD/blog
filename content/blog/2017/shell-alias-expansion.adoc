@@ -1,0 +1,24 @@
+title=Shell Alias-Expansion
+date=2017-01-17
+type=post
+tags=bash
+status=published
+~~~~~~
+
+Say, you have defined an alias:
+
+----
+$ alias gg='git log --oneline --decorate --graph'
+----
+
+But when typing 'gg' wouldn't it be nice to expand the alias so you can make a small modification to the args?
+
+----
+$ gg<Ctrl+Alt+e>
+----
+
+Say, you want to easily clear the screen; there is a shortcut Ctrl+L. But maybe you also always want to print the contents of the current directory: you can rebind the shortcut:
+
+----
+$ bind -x '"\C-l": clear; ls -l'
+----

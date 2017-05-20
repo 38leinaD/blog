@@ -1,0 +1,17 @@
+title=Java Version Strings
+date=2017-01-16
+type=post
+tags=bash
+status=published
+~~~~~~
+
+For what JDK version is a class compiled?
+
+----
+$ javap -verbose MyClass.class | grep "major"
+----
+
+* Java 5: major version 49
+* Java 6: major version 50
+* Java 7: major version 51
+* Java 8: major version 52

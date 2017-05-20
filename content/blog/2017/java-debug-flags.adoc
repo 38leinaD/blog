@@ -1,0 +1,14 @@
+= Java debug-flags
+.
+2017-03-22
+:jbake-type: post
+:jbake-tags: java
+:jbake-status: published
+
+----
+-Xdebug
+// shared-memory (windows only)
+-agentlib:jdwp=transport=dt_shmem,address=eclipse,server=y,suspend=n
+// socket
+-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=9999
+----

@@ -1,0 +1,55 @@
+= Git
+.
+2017-01-10
+:jbake-type: page
+:jbake-tags: git
+:jbake-status: published
+
+Discard local changes:
+
+----
+git checkout -- .
+----
+
+Find a commit that introduced a string in any file (on any branch):
+
+----
+git log -S whatever --source --all
+----
+
+Head only:
+
+----
+git log -S whatever
+----
+
+See the commit graph:
+
+----
+git log --oneline --decorate --graph
+----
+
+See what commits affected a file
+
+----
+git log --oneline --stat --follow DailyBuild/component.versions
+----
+
+See what commits affected a folder
+
+----
+git log --oneline -- subfolder
+----
+
+Latest commit that has foo in commit-message
+
+----
+git show :/foo | cat
+----
+
+----
+// reset file hunks inetractively
+git checkout -p <path-to-file>
+// diff without pager
+git --no-pager diff
+----

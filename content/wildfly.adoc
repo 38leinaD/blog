@@ -1,0 +1,516 @@
+= Wildfly 10/EAP 7
+.
+2017-01-10
+:jbake-type: page
+:jbake-tags: wildfly,jboss
+:jbake-status: published
+
+A good place to get started with the CLI (and in general) is the link:https://docs.jboss.org/author/display/WFLY10/CLI+Recipes[Wildfly 10 documentation].
+
+== Undertow
+
+=== HTTP Access Log
+
+----
+/subsystem=undertow/server=default-server/host=default-host/setting=access-log:add(pattern="%A%t%h%l%u|%r|%s|%b|%T|%I", directory="${jboss.server.log.dir}", prefix=access, suffix=".log")<1>
+/subsystem=undertow/server=default-server/http-listener=default:write-attribute(name=record-request-start-time,value=true)<2>
+----
+<1> enable access log; no restart needed
+<2> enable processing-time print (%T); restart required
+
+Or, dump all requests. See link:http://ralph.soika.com/wildfly-undertow/[this] blog.
+
+----
+... 
+<subsystem xmlns="urn:jboss:domain:undertow:2.0">
+....
+ <server name="default-server">
+       ...
+      <host name="default-host" alias="localhost">
+          .....
+          <filter-ref name="request-dumper"/>
+      </host>
+ </server>
+....
+<filters>
+    .....
+    <filter name="request-dumper" class-name="io.undertow.server.handlers.RequestDumpingHandler" module="io.undertow.core" />
+</filters>
+----
+
+=== Server-side Javascript
+http://wildfly.org/news/2015/08/10/Javascript-Support-In-Wildfly/
+
+=== Offline-mode CLI
+
+----
+embed-server --server-config=standalone-full.xml --empty-config --std-out=echo
+stop-embedded-server
+----
+
+=== JNDI
+
+Query JNDI-tree
+
+----
+jboss-cli.bat --connect --command=/subsystem=naming/:jndi-view
+/subsystem=naming/:jndi-view
+
+curl --digest -u admin1:admin12! -L -D - http://localhost:9990/management --header "Content-Type: application/json" -d '{"address":["subsystem","naming"],"operation":"jndi-view","json.pretty":1}'
+----
+
+Set entry
+
+----
+curl --digest -u admin1:admin12! -L -D - http://localhost:9990/management --header "Content-Type: application/json" -d '{"address":["subsystem","naming", "binding", "java:global/mybinding"],"operation":"add", "binding-type":"simple", "type":"long", "value":1000}'
+----
+
+Get single entry:
+
+----
+curl --digest -u admin1:admin12! -L -D - http://localhost:9990/management --header "Content-Type: application/json" -d '{"address":["subsystem","naming", "binding", "java:global/mybinding"],"operation":"read-resource","json.pretty":1}'
+----
+
+=== JMX
+
+* Use `JBOSS_HOME/bin/jconsole.sh`. 
+* Connect-string `service:jmx:remote+http://localhost:9990`.
+* Username/password is a management-user.
+
+=== Deploy
+
+----
+git clone https://github.com/38leinaD/the-incredible-jee-machine.git
+cd the-incredible-jee-machine
+mvn clean install
+----
+
+----
+curl --digest -u admin1:admin12! -F "file=@target/the-incredible-jee-machine.war" http://localhost:9990/management/add-content
+{"outcome" : "success", "result" : { "BYTES_VALUE" : "0Q6oKj1FB+GFaS5UpnAIbKdEiYM=" }}
+----
+
+----
+curl --digest -u admin1:admin12! -H "Content-Type: application/json" -d '{"content":[{"hash": {"BYTES_VALUE" : "0Q6oKj1FB+GFaS5UpnAIbKdEiYM="}}], "address": [{"deployment":"the-incredible-jee-machine.war"}], "operation":"add", "enabled":"true"}' http://localhost:9990/management
+{"outcome" : "success"}
+----
+
+----
+$ curl --digest -u admin1:admin12! -H "Content-Type: application/json" -d '{"address": [{"deployment":"the-incredible-jee-machine.war"}], "operation":"remove", "enabled":"true"}' http://localhost:9990/management
+{"outcome" : "success"}
+----
+
+Status:
+
+----
+curl --digest 'http://administrator:Password1!@localhost:9990/management' --header "Content-Type: application/json" -d '{"operation":"read-attribute","name":"status","recursive":"true", "include-runtime":"true", "address":["deployment","remote-ejb-server.jar"], "json.pretty":1}'
+----
+
+Redeploy:
+
+----
+curl --digest 'http://administrator:Password1!@localhost:9990/management' --header "Content-Type: application/json" -d '{"operation":"redeploy","address":[{"deployment":"remote-ejb-server.jar"}]}'
+----
+
+Check Connection:
+
+----
+curl --digest 'http://administrator:Password1!@localhost:9990/management' --header "Content-Type: application/json" -d '{"operation":"test-connection-in-pool","address":[{"subsystem":"datasources"},{"data-source":"ExampleDS"}]}'
+----
+
+== Start/stop
+
+----
+./jboss-cli.sh --connect command=:shutdown
+./jboss-cli.sh --connect command=:reload
+----
+
+== Monitoring
+
+----
+http://localhost:9990/management?operation=attribute&name=server-state
+----
+
+=== Undertow
+
+Enable statistics:
+
+----
+/subsystem=undertow :write-attribute(name=statistics-enabled,value=true)
+curl --digest -u admin1:admin12! -L -D - http://localhost:9990/management --header "Content-Type: application/json" -d '{"address":["subsystem","undertow"],"operation":"write-attribute","name":"statistics-enabled","value":true,"json.pretty":1}'
+curl --digest -u admin1:admin12! -L -D - "http://localhost:9990/management/subsystem/datasources?operation=resource&include-runtime=true&recursive&json.pretty"
+----
+
+----
+/subsystem=undertow/server=default-server/http-listener=default :read-resource(include-runtime=true)
+----
+
+provides
+
+----
+{
+    "outcome" => "success",
+    "result" => {
+        "allow-encoded-slash" => false,
+        "allow-equals-in-cookie-value" => false,
+        "always-set-keep-alive" => true,
+        "buffer-pipelined-data" => true,
+        "buffer-pool" => "default",
+        "bytes-received" => 2453L,
+        "bytes-sent" => 3974L,
+        "certificate-forwarding" => false,
+        "decode-url" => true,
+        "disallowed-methods" => ["TRACE"],
+        "enable-http2" => false,
+        "enabled" => true,
+        "error-count" => 0L,
+        "max-buffered-request-size" => 16384,
+        "max-connections" => undefined,
+        "max-cookies" => 200,
+        "max-header-size" => 1048576,
+        "max-headers" => 200,
+        "max-parameters" => 1000,
+        "max-post-size" => 10485760L,
+        "max-processing-time" => 0L,
+        "no-request-timeout" => undefined,
+        "processing-time" => 0L,
+        "proxy-address-forwarding" => false,
+        "read-timeout" => undefined,
+        "receive-buffer" => undefined,
+        "record-request-start-time" => false,
+        "redirect-socket" => "https",
+        "request-count" => 7L,
+        "request-parse-timeout" => undefined,
+        "resolve-peer-address" => false,
+        "secure" => false,
+        "send-buffer" => undefined,
+        "socket-binding" => "http",
+        "tcp-backlog" => 10000,
+        "tcp-keep-alive" => undefined,
+        "url-charset" => "UTF-8",
+        "worker" => "default",
+        "write-timeout" => undefined
+    }
+}
+----
+
+----
+/deployment=doit.war/subsystem=undertow :read-resource(include-runtime=true)
+----
+
+provides
+
+----
+{
+    "outcome" => "success",
+    "result" => {
+        "active-sessions" => 0,
+        "context-root" => "/doit",
+        "expired-sessions" => 0,
+        "max-active-sessions" => -1,
+        "rejected-sessions" => 0,
+        "server" => "default-server",
+        "session-avg-alive-time" => 0,
+        "session-max-alive-time" => 0,
+        "sessions-created" => 0,
+        "virtual-host" => "default-host",
+        "servlet" => {
+            "Faces Servlet" => undefined,
+            "com.dp.doit.business.monitoring.boundary.MonitoringEventsServlet" => undefined,
+            "com.dp.doit.business.JAXRSConfiguration" => undefined
+        },
+        "websocket" => {"/monitorws" => undefined}
+    }
+}
+----
+
+
+----
+/deployment=doit.war/subsystem=undertow/servlet=com.dp.doit.business.JAXRSConfiguration :read-resource(include-runtime=true)
+----
+
+provides
+
+----
+{
+    "outcome" => "success",
+    "result" => {
+        "mappings" => ["/api/*"],
+        "max-request-time" => 942,
+        "min-request-time" => 21,
+        "request-count" => 2L,
+        "servlet-class" => "org.jboss.resteasy.plugins.server.servlet.HttpServlet30Dispatcher",
+        "servlet-name" => "com.dp.doit.business.JAXRSConfiguration",
+        "total-request-time" => 963L
+    }
+}
+----
+
+
+----
+/subsystem=io/worker=default :read-resource
+----
+
+provides 
+
+----
+{
+    "outcome" => "success",
+    "result" => {
+        "io-threads" => undefined,
+        "stack-size" => 0L,
+        "task-keepalive" => 60,
+        "task-max-threads" => undefined
+    }
+}
+----
+
+Set `/subsystem=io/worker=default :write-attribute(name=task-max-threads,value=1)` for number of workers to handle servlet-request (blocking).
+Set `/subsystem=io/worker=default :write-attribute(name=io-threads,value=1)` for incoming io/connection (non-blocking).
+
+
+=== EJB
+
+Enable statistics:
+
+----
+/subsystem=ejb3 :write-attribute(name=enable-statistics,value=true)
+curl --digest -u admin1:admin12! -L -D - http://localhost:9990/management --header "Content-Type: application/json" -d '{"address":["subsystem","ejb3"],"operation":"write-attribute","name":"enable-statistics","value":true,"json.pretty":1}'
+----
+
+No pooling of EJBs on startup anymore. There is only a strict-max-pool-size (slsb-strict-max-pool).
+
+----
+/subsystem=ejb3/:read-attribute-attribute(name=default-slsb-instance-pool)
+----
+
+----
+/deployment=doit.war/subsystem=ejb3/stateless-session-bean=TodosResource :read-resource(include-runtime=true)
+----
+
+provides
+
+----
+{
+    "outcome" => "success",
+    "result" => {
+        "component-class-name" => "TodosResource",
+        "declared-roles" => [],
+        "execution-time" => 2032815L,
+        "invocations" => 1972L,
+        "methods" => {"all" => {
+            "execution-time" => 2032815L,
+            "invocations" => 1972L,
+            "wait-time" => 470L
+        }},
+        "peak-concurrent-invocations" => 100L,
+        "pool-available-count" => 100,
+        "pool-create-count" => 100,
+        "pool-current-size" => 100,
+        "pool-max-size" => 100,
+        "pool-name" => "slsb-strict-max-pool",
+        "pool-remove-count" => 0,
+        "run-as-role" => undefined,
+        "security-domain" => "other",
+        "timers" => [],
+        "wait-time" => 470L,
+        "service" => undefined
+    }
+}
+----
+
+For Remote EJB-calls, this IO-pool is used:
+
+----
+/subsystem=ejb3/thread-pool=default/:read-resource(include-runtime=true)
+----
+
+provides
+
+----
+{
+    "outcome" => "success",
+    "result" => {
+        "active-count" => 0,
+        "completed-task-count" => 0L,
+        "current-thread-count" => 0,
+        "keepalive-time" => {
+            "time" => 100L,
+            "unit" => "MILLISECONDS"
+        },
+        "largest-thread-count" => 0,
+        "max-threads" => 10,
+        "name" => "default",
+        "queue-size" => 0,
+        "rejected-count" => 0,
+        "task-count" => 0L,
+        "thread-factory" => undefined
+    }
+}
+----
+
+=== Resources/EIS
+
+==== JDBC
+
+Enable statistics:
+
+----
+/subsystem=datasources/data-source=ExampleDS :write-attribute(name=statistics-enabled, value=true)
+----
+
+----
+/subsystem=datasources/data-source=ExampleDS :read-resource(include-runtime=true)
+{
+    "outcome" => "success",
+    "result" => {
+        "allocation-retry" => undefined,
+        "allocation-retry-wait-millis" => undefined,
+        "allow-multiple-users" => false,
+        "background-validation" => undefined,
+        "background-validation-millis" => undefined,
+        "blocking-timeout-wait-millis" => undefined,
+        "capacity-decrementer-class" => undefined,
+        "capacity-decrementer-properties" => undefined,
+        "capacity-incrementer-class" => undefined,
+        "capacity-incrementer-properties" => undefined,
+        "check-valid-connection-sql" => undefined,
+        "connectable" => false,
+        "connection-listener-class" => undefined,
+        "connection-listener-property" => undefined,
+        "connection-url" => "jdbc:h2:tcp://localhost/~/test",
+        "datasource-class" => undefined,
+        "driver-class" => undefined,
+        "driver-name" => "h2",
+        "enabled" => true,
+        "enlistment-trace" => true,
+        "exception-sorter-class-name" => undefined,
+        "exception-sorter-properties" => undefined,
+        "flush-strategy" => undefined,
+        "idle-timeout-minutes" => undefined,
+        "initial-pool-size" => undefined,
+        "jndi-name" => "java:jboss/datasources/ExampleDS",
+        "jta" => true,
+        "max-pool-size" => undefined,
+        "mcp" => "org.jboss.jca.core.connectionmanager.pool.mcp.SemaphoreConcurrentLinkedDequeManagedConnectionPool",
+        "min-pool-size" => undefined,
+        "new-connection-sql" => undefined,
+        "password" => "sa",
+        "pool-fair" => undefined,
+        "pool-prefill" => undefined,
+        "pool-use-strict-min" => undefined,
+        "prepared-statements-cache-size" => undefined,
+        "query-timeout" => undefined,
+        "reauth-plugin-class-name" => undefined,
+        "reauth-plugin-properties" => undefined,
+        "security-domain" => undefined,
+        "set-tx-query-timeout" => false,
+        "share-prepared-statements" => false,
+        "spy" => false,
+        "stale-connection-checker-class-name" => undefined,
+        "stale-connection-checker-properties" => undefined,
+        "statistics-enabled" => false,
+        "track-statements" => "NOWARN",
+        "tracking" => false,
+        "transaction-isolation" => undefined,
+        "url-delimiter" => undefined,
+        "url-selector-strategy-class-name" => undefined,
+        "use-ccm" => true,
+        "use-fast-fail" => false,
+        "use-java-context" => true,
+        "use-try-lock" => undefined,
+        "user-name" => "sa",
+        "valid-connection-checker-class-name" => undefined,
+        "valid-connection-checker-properties" => undefined,
+        "validate-on-match" => undefined,
+        "connection-properties" => undefined,
+        "statistics" => {
+            "pool" => undefined,
+            "jdbc" => undefined
+        }
+    }
+}
+----
+
+----
+/subsystem=datasources/data-source=ExampleDS/statistics=pool :read-resource(include-runtime=true)
+{
+    "outcome" => "success",
+    "result" => {
+        "ActiveCount" => 8,
+        "AvailableCount" => 21,
+        "AverageBlockingTime" => 1L,
+        "AverageCreationTime" => 85L,
+        "AverageGetTime" => 2L,
+        "AveragePoolTime" => 1212L,
+        "AverageUsageTime" => 13L,
+        "BlockingFailureCount" => 0,
+        "CreatedCount" => 8,
+        "DestroyedCount" => 0,
+        "IdleCount" => 4,
+        "InUseCount" => 4,
+        "MaxCreationTime" => 133L,
+        "MaxGetTime" => 133L,
+        "MaxPoolTime" => 153614L,
+        "MaxUsageTime" => 6124L,
+        "MaxUsedCount" => 7,
+        "MaxWaitCount" => 0,
+        "MaxWaitTime" => 1L,
+        "TimedOut" => 0,
+        "TotalBlockingTime" => 2L,
+        "TotalCreationTime" => 685L,
+        "TotalGetTime" => 1732L,
+        "TotalPoolTime" => 1108149L,
+        "TotalUsageTime" => 11515L,
+        "WaitCount" => 0,
+        "XACommitAverageTime" => 0L,
+        "XACommitCount" => 1149L,
+        "XACommitMaxTime" => 47L,
+        "XACommitTotalTime" => 741L,
+        "XAEndAverageTime" => 0L,
+        "XAEndCount" => 1168L,
+        "XAEndMaxTime" => 1L,
+        "XAEndTotalTime" => 2L,
+        "XAForgetAverageTime" => 0L,
+        "XAForgetCount" => 0L,
+        "XAForgetMaxTime" => 0L,
+        "XAForgetTotalTime" => 0L,
+        "XAPrepareAverageTime" => 16L,
+        "XAPrepareCount" => 1L,
+        "XAPrepareMaxTime" => 16L,
+        "XAPrepareTotalTime" => 16L,
+        "XARecoverAverageTime" => 2L,
+        "XARecoverCount" => 6L,
+        "XARecoverMaxTime" => 15L,
+        "XARecoverTotalTime" => 17L,
+        "XARollbackAverageTime" => 0L,
+        "XARollbackCount" => 19L,
+        "XARollbackMaxTime" => 1L,
+        "XARollbackTotalTime" => 9L,
+        "XAStartAverageTime" => 0L,
+        "XAStartCount" => 1168L,
+        "XAStartMaxTime" => 1L,
+        "XAStartTotalTime" => 5L,
+        "statistics-enabled" => true
+    }
+}
+----
+
+----
+/subsystem=datasources/data-source=ExampleDS/statistics=jdbc :read-resource(include-runtime=true)
+{
+    "outcome" => "success",
+    "result" => {
+        "PreparedStatementCacheAccessCount" => 0L,
+        "PreparedStatementCacheAddCount" => 0L,
+        "PreparedStatementCacheCurrentSize" => 0,
+        "PreparedStatementCacheDeleteCount" => 0L,
+        "PreparedStatementCacheHitCount" => 0L,
+        "PreparedStatementCacheMissCount" => 0L,
+        "statistics-enabled" => false
+    }
+}
+----
+
+
+

@@ -1,0 +1,268 @@
+= Developer Diary 2017
+.
+2017-01-01
+:jbake-type: page
+:jbake-tags: git
+:jbake-status: published
+
+== Friday, 12.05.2017
+
+=== Websphere Liberty Profile Admin Console
+
+----
+$ bin/installUtility install adminCenter-1.0
+----
+
+.server.xml
+[source,xml]
+----
+<!-- Enable features -->
+<featureManager>
+    <!-- ... -->
+    <feature>adminCenter-1.0</feature>
+</featureManager>
+
+<keyStore id="defaultKeyStore" password="admin123" />
+
+<basicRegistry id="basic" realm="BasicRealm">
+    <user name="admin" password="admin123" />
+</basicRegistry>
+----
+
+----
+[AUDIT   ] CWWKT0016I: Web application available (default_host): http://localhost:9090/adminCenter/
+----
+
+== Monday, 01.05.2017
+
+* link:https://jenkins.io/doc/book/managing/cli/[]
+* link:https://jenkins.io/doc/book/pipeline/jenkinsfile/[]
+* link:https://jenkins.io/doc/book/pipeline/syntax/#parameters[]
+* link:https://jenkins.io/blog/2017/01/19/converting-conditional-to-pipeline/[]
+=== Set up docker as jenkins build slaves
+
+* link:http://scriptcrunch.com/enable-docker-remote-api/[Enable]
+
+* SSL keys are here: /cygdrive/c/Users/<username>/.docker/machine/machines/default
+
+----
+ curl --insecure -v --cert cert.pem --key key.pem -X GET https://192.168.99.100:2376/images/json
+----
+
+* link:https://devopscube.com/docker-containers-as-build-slaves-jenkins/[]
+* link:https://engineering.riotgames.com/news/jenkins-ephemeral-docker-tutorial[]
+
+== Saturday, 22.04.2017
+
+* link:https://static.rainfocus.com/oracle/oow16/sess/1462485593256001c2xn/ppt/JavaFX%209%20-%20New%20and%20Noteworthy.pdf[JavaFX 9]
+
+== Wednesday, 19.04.2017
+
+* link:http://trustmeiamadeveloper.com/2016/03/18/where-is-my-memory-java/[]
+* link:http://blog.jelastic.com/2017/04/13/java-ram-usage-in-containers-top-5-tips-not-to-lose-your-memory/[]
+** JDK9 has `-XX:+UseCGroupMemoryLimitForHeap`
+** JDK8: Always specify `-Xmx1024m` and `-XX:MaxMetaspaceSize`
+
+* link:https://www.youtube.com/watch?v=pNmzT4K9aTw[Bean Validation 2.0]
+
+== Friday, 24.03.2017
+
+* Nice stash of EJB-spec details: link:https://coderanch.com/wiki/659897/OCEEJBD-Links[]
+
+== Monday, 20.03.2017
+
+* looking into JavaEE 8 Security: https://www.slideshare.net/rdebusscher/what-is-tackled-in-the-java-ee-security-api-java-ee-8
+* JavaFX pseudo-classes: https://rterp.wordpress.com/2015/04/11/atlas-trader-test/
+
+== Wednesday, 15.03.2017
+
+* java in a docker container. link:https://developers.redhat.com/blog/2017/03/14/java-inside-docker/[this] article explains nicely a problem i had recently...
+* strace on java: https://blog.packagecloud.io/eng/2017/03/14/using-strace-to-understand-java-performance-improvement/
+
+----
+strace -fopen,read,close,fstat java -jar Test.jar
+----
+
+== Sunday, 05.03.2017
+
+* I think it will get the full book: link:https://leanpub.com/high-performance-java-persistence/read[]
+* Great talk on how sql is great: link:https://www.youtube.com/watch?v=wTPGW1PNy_Y[]
+* link:https://www.youtube.com/watch?v=4eODK3WS6cM[ScreenPlay: the next stage in automated acceptance testing by John Smart/Jan Molak]
+
+Did a first deploy to Amazon ECS: link:https://github.com/38leinaD/aws-playground[]
+
+== Saturday, 04.03.2017
+
+* Adam on integration testing: link:http://www.oracle.com/technetwork/articles/java/integrationtesting-487452.html[]
+
+== Monday, 27.02.2017
+
+* Nice read on debugging webkit: http://www.saurik.com/id/14
+
+== Friday, 24.02.2017
+
+* link:https://blog-rmannibucau.rhcloud.com/#/post/integrate-third-party-library-cdi-interceptors[Integrate 3rd party library with CDI]
+* link: https://lairdnelson.wordpress.com/2017/02/20/blocking-the-cdi-container-politely/
+
+== Wednesday, 22.02.2017
+
+* Amazon API Gateway and SSL: https://docs.aws.amazon.com/apigateway/latest/developerguide/getting-started-client-side-ssl-authentication.html
+
+== Saturday, 18.02.2017
+
+Readings on DDD, Event-Sourcing and CQRS:
+
+* link:https://www.infoq.com/articles/microservices-aggregates-events-cqrs-part-1-richardson[]
+* link:https://www.infoq.com/articles/microservices-aggregates-events-cqrs-part-2-richardson[]
+
+Setting up lighttp: link:http://bredsaal.dk/using-shell-scripts-for-cgi-in-lighttpd[]
+
+Setting up ssl: link:
+
+* http://www.makethenmakeinstall.com/2014/05/ssl-client-authentication-step-by-step/[]
+* https://redmine.lighttpd.net/projects/1/wiki/docs_ssl[]
+* https://schnouki.net/posts/2014/08/12/lighttpd-and-ssl-client-certificates/[]
+
+tshark: wireshark cli interface:
+
+----
+tshark -i 2 -f 'host 192.168.1.1 and port 80' -Y http
+----
+
+== Thursday, 09.02.2017
+
+Nice write-up about annotation processors: link:http://hannesdorfmann.com/annotation-processing/annotationprocessing101[]
+
+== Sunday, 05.02.2017
+
+Sunday readings:
+
+* "CDI “wants” you to know all your values in advance whenever possible": https://lairdnelson.wordpress.com/2017/02/02/cdi-qualifiers-are-values-part-2/
+* "Changing Annotations at Startup in CDI 2.0": https://lairdnelson.wordpress.com/2016/12/15/636/
+* "Tesing CDI with Arquillian": http://weld.cdi-spec.org/news/2017/02/01/tip4-testing/
+* arquillian-container-adapters: http://arquillian.org/modules/
+* link:https://www.reactivesystems.eu/2017/01/31/things-i-wish-i-knew-when-i-started-building-reactive-systems.html[Things I Wish I Knew When I Started Building Reactive Systems]
++
+.. You’re going to use sub-thread level concurrency
+.. You want to use asynchronous I/O. If you can’t, at least isolate any synchronous I/O (JDBC) from the rest.
+.. You don’t want to use distributed transactions, they’re fragile, they’re points of contention.
+.. You don’t want to use an application server.
++
+* link:http://www.grahamlea.com/2016/08/distributed-transactions-microservices-icebergs/[Distributed Transactions: The Icebergs of Microservices]
+
+
+== Thursday, 02.02.2017
+
+Playing around with rasperry pi for home automation.
+----
+Username: pi
+Password: raspberry
+
+sudo raspi-config
+----
+
+* wifi: https://www.raspberrypi.org/documentation/configuration/wireless/wireless-cli.md
+
+== Friday, 27.01.2017
+
+Nice reads on annotation processors and java compiler api:
+
+* https://www.javacodegeeks.com/2015/09/java-annotation-processors.html
+* https://www.javacodegeeks.com/2015/09/java-compiler-api.html
+* https://deors.wordpress.com/2011/10/08/annotation-processors/
+* https://deors.wordpress.com/2011/10/31/annotation-generators/
+
+== Thursday, 26.01.2017
+
+Tracing Weld/CDI under Wildfly:
+
+.standalone-full.xml
+[source,xml]
+----
+<logger category="org.jboss.weld">
+    <level name="TRACE"/>
+</logger>
+<logger category="org.jboss.as.weld">
+    <level name="TRACE"/>
+</logger>
+----
+
+== Wednesday, 18.01.2017
+
+* So, disabling "Clear Text Font" in windows makes everything look much nice and cleaner :-)
+
+== Tuesday, 17.01.2017
+
+* So, link:https://eclipse.org/xtend[xtend] looks really interesting. Stumbled upon it while watching link:https://vimeo.com/84840897[this] on JavaFx.
+
+== Sunday, 08.01.2017
+
+* Reactive Programming versus Reactive Systems: A nice link:http://www.lightbend.com/reactive-programming-versus-reactive-systems?utm_content=buffer4dc32&utm_medium=social&utm_source=twitter.com&utm_campaign=buffer[write-up] by the lightbend guys.
+* link:http://iteratrlearning.com/java/2016/12/26/pipes-and-filters-actors-akka-java.html?utm_content=buffer41885&utm_medium=social&utm_source=twitter.com&utm_campaign=buffer[Pipes and Filters EIP within Akka].
+* Started reading link:http://docs.aws.amazon.com/lambda/latest/dg/welcome.html[AWS Lambda Development Guide]
+
+== Saturday, 07.01.2017
+
+=== bintray
+
+Finally singed up for bintray and published link:https://bintray.com/38leinad/maven/padersprinter-query[my first artifact]. Much nicer to use than sonatype.
+
+* link:https://bintray.com/docs/usermanual/uploads/uploads_managinguploadedcontent.html#_gpg_signing[Internet says] there is a nice feature for "Signing with the Bintray Key" but i don't see to have that option.
+** So, had to link:http://central.sonatype.org/pages/working-with-pgp-signatures.html[generate] my own.
+** To export my keys from gpg:
++
+----
+gpg --armor --export 632B9183
+gpg --armor --export-secret-keys BE07FA4E
+----
+
+=== maven release plugin
+
+First time doing a release, and thus github might no be in known_hosts, fails with this error:
+
+----
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-release-plugin:2.5.2:prepare (default-cli) on project padersprinter-query: Unable to tag SCM
+[ERROR] Provider message:
+[ERROR] The git-push command failed.
+[ERROR] Command output:
+[ERROR] ssh_askpass: exec(/usr/sbin/ssh-askpass): No such file or directory
+[ERROR] Host key verification failed.
+[ERROR] fatal: Could not read from remote repository.
+----
+
+added to known_hosts by testing on command-line: `git ls-remote -h git@github.com:38leinaD/padersprinter-query.git HEAD`
+
+So, release:prepare always tagged the SNAPSHOT version because no commit was happening before it. Seems to be a known issue; see link:[stackoverflow]. Tried a lot of version; the only combination that worked was this:
+
+[source,xml]
+----
+<plugins>
+    <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-release-plugin</artifactId>
+        <version>2.5.3</version>
+        <configuration>
+            <tagNameFormat>v@{project.version}</tagNameFormat>
+        </configuration>
+        <dependencies>
+            <dependency>
+                <groupId>org.apache.maven.scm</groupId>
+                <artifactId>maven-scm-provider-gitexe</artifactId>
+                <version>1.8.1</version>
+            </dependency>
+        </dependencies>
+    </plugin>
+</plugins>
+----
+
+Also read the following articles on how to build/release with maven following CI/CD approach. Different but both interesting:
+
+* link:https://axelfontaine.com/blog/final-nail.html[Releases with Maven and Git]
+* link:http://java.jiderhamn.se/2016/05/04/announcing-maven-promote-plugin/[Maven Promote Plugin]
+* link:https://dzone.com/articles/why-i-never-use-maven-release[Why I Never Use the Maven Release Plugin]
+
+Using link:https://bitbucket.org/atlassian/jgit-flow/wiki/Home[gitflow plugin] for link:http://nvie.com/posts/a-successful-git-branching-model/[gitflow] see also like a handy plugin.
+
+== Tuesday, 03.01.2017
+
+Read link:https://www.gitbook.com/book/thomasnield/rxjavafx-guide/details[Learning RxJava with JavaFX].
