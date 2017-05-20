@@ -4,8 +4,8 @@ services:
   - docker                  
 
 before_install:            
-  - curl -L -O http://hash.to/5tc
-  - unzip jbake-*.zip
+  - curl -L -O jbake.zip http://hash.to/5tc
+  - unzip jbake.zip && rm -f jbake.zip
 
 script:
   - jbake-*/bin/jbake -b
