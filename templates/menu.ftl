@@ -19,8 +19,8 @@
             <li class="dropdown">
               <a href="#" class="dropdown-toggle" data-toggle="dropdown">Notes <b class="caret"></b></a>
               <ul class="dropdown-menu">
-                <li><a href="wildfly.html">Git</a></li>
-                <li><a href="wildfly.html">Maven</a></li>
+                <li><a href="git.html">Git</a></li>
+                <li><a href="maven.html">Maven</a></li>
                 <li><a href="wildfly.html">Wildfly</a></li>
                 
               </ul>
