@@ -1,0 +1,95 @@
+= HTML5, ES6, Netbeans & webpack
+.
+2017-05-24
+:jbake-type: post
+:jbake-tags: javascript, es6, netbeans
+:jbake-status: draft
+
+I think Netbeans IDE is awesome for Java and recently also for HTML5 development.
+The integration that allows modifying HTML content in the IDE and getting instant hot-reload in the browser is excellent.
+
+However, once starting to work with npm and webpack, the integrated link:https://webpack.js.org/configuration/dev-server/[dev-server] can replace some of the features of Netbeans IDE but fails on hot-reload of the index.html; discussion can be found link:https://github.com/jantimon/html-webpack-plugin/issues/100[here].
+
+Essentially, i have been trying to find a good setup to work with both mechanism when I need to. Tried to take the best of some approaches found link:https://github.com/AdamBien/react-essential[here], link:https://blogs.oracle.com/geertjan/ecmascript-6,-modules,-babel,-webpack,-and-netbeans-ide[here], link:https://blogs.oracle.com/geertjan/structuring-ecmascript-6-modules-via-babel-and-webpack[here] and based on how some of the HTML5-app templates in Netbeans structure it.
+
+Up to now, i favor the following structure:
+
+----
+mywebapp
+├── nbproject
+│   ├── private
+│   ├── project.properties
+│   └── project.xml
+├── src
+│   └── main.js
+├── target
+│   ├── jar.js
+│   └── jar.js.map
+├── index.html
+├── package.json
+└── webpack.config.js
+----
+
+.package.json
+[source,javascript]
+----
+{
+  "name": "mywebapp",
+  "version": "1.0.0",
+  "main": "webpack.config.js",
+  "scripts": {
+    "server": "webpack-dev-server --hot --inline",
+    "build": "webpack --progress --colors --watch"
+  },
+  "author": "daniel.platz",
+  "contributors": [],
+  "dependencies": {},
+  "devDependencies": {
+    "babel-core": "^6.13.2",
+    "babel-loader": "^6.2.5",
+    "babel-plugin-transform-class-properties": "^6.11.5",
+    "babel-preset-es2015": "^6.13.2",
+    "webpack": "^2.6.0",
+    "webpack-dev-server": "^2.4.5"
+  }
+}
+----
+
+.webpack.config.js
+[source,javascript]
+----
+module.exports = {
+  devtool:'source-map',
+  entry: {
+    app: ['./src/main.js']
+  },
+  output: {
+    path: __dirname + '/target/',
+    filename: 'jar.js',
+    publicPath:'target'
+  },
+  devServer: {
+    contentBase:".",
+    headers: {
+      "Access-Control-Allow-Origin": "*"
+    },
+    historyApiFallback: true,
+    port: 8888
+  },
+  module: {
+    loaders: [
+      {
+        test: /\.js$/,
+        exclude: /node_modules/,
+        loader: 'babel-loader',
+        query: {
+          presets: ['es2015'],
+          plugins: ['transform-class-properties']
+        }
+      }    
+    ]
+  }
+};
+----
+
+Note that it is important for Netbeans to have the "Site Root" configured to the root of the project (site.root.folder=.).
