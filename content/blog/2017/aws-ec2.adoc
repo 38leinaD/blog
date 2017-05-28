@@ -1,0 +1,19 @@
+= AWS ECS: Push a docker container
+.
+2017-05-28
+:jbake-type: post
+:jbake-tags: aws, docker
+:jbake-status: published
+
+Steps to deploy docker containers to AWS EC2:
+
+. Created a docker-repository with the name `de.dplatz/abc`, you will get a page with all the steps and coordinates for `docker login`, `docker tag` and `docker push`.
+. From CLI run:
+[source]
+----
+aws ecr get-login --region eu-central-1
+docker tag de.dplatz/abc:latest <my-aws-url>/de.dplatz/abc:latest
+docker push <my-aws-url>/de.dplatz/abc:latest
+----
+
+See link:http://docs.aws.amazon.com/AmazonECS/latest/developerguide/docker-basics.html[here] for starting the container.

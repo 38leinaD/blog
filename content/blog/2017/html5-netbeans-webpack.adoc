@@ -12,7 +12,7 @@ However, once starting to work with npm and webpack, the integrated link:https:/
 
 Essentially, i have been trying to find a good setup to work with both mechanism when I need to. Tried to take the best of some approaches found link:https://github.com/AdamBien/react-essential[here], link:https://blogs.oracle.com/geertjan/ecmascript-6,-modules,-babel,-webpack,-and-netbeans-ide[here], link:https://blogs.oracle.com/geertjan/structuring-ecmascript-6-modules-via-babel-and-webpack[here] and based on how some of the HTML5-app templates in Netbeans structure it.
 
-Up to now, i favor the following structure:
+Up to now, I favor the following structure:
 
 ----
 mywebapp

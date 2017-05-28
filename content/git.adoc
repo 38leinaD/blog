@@ -1,4 +1,4 @@
-= Git
+= Git Cheatsheet
 .
 2017-01-10
 :jbake-type: page
@@ -17,16 +17,44 @@ Find a commit that introduced a string in any file (on any branch):
 git log -S whatever --source --all
 ----
 
-Head only:
+The same on HEAD only:
 
 ----
 git log -S whatever
 ----
 
-See the commit graph:
+See the commit graph across all branches for the last two weeks:
 
 ----
-git log --oneline --decorate --graph
+git log --all --since='2 weeks' --oneline --no-merges --decorate --graph
+//--author=<your email address>
+//--since=00:00:00
+----
+
+See also additions and deletions:
+
+----
+git log --graph --all --decorate --stat --date=iso
+----
+
+What changes am I about to pull in?
+
+----
+git checkout feature/fonts
+git fetch
+git log --oneline --no-merges ..origin/feature/fonts
+----
+
+Changelog
+
+----
+git log --oneline --no-merges <last tag>..HEAD
+----
+
+Who made a change to these lines?
+
+----
+git blame -L5,10 component.versions
 ----
 
 See what commits affected a file
@@ -47,9 +75,15 @@ Latest commit that has foo in commit-message
 git show :/foo | cat
 ----
 
+Reset file hunks interactively
+
 ----
-// reset file hunks inetractively
 git checkout -p <path-to-file>
-// diff without pager
-git --no-pager diff
+----
+
+
+Word-diff instead of line-diff
+
+----
+git --no-pager diff --word-diff=color
 ----
