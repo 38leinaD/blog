@@ -18,6 +18,7 @@ after_failure:
 
 after_success:      
   - cd output
+  - echo "dplatz.de" > CNAME
   - git init
   - git config user.name "${GH_USER_NAME}"
   - git config user.email "{GH_USER_EMAIL}"
