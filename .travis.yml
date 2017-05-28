@@ -16,9 +16,9 @@ after_error:
 after_failure:
   - docker logs jbake
 
-after_success:      
+after_success:
+  - cp CNAME output/
   - cd output
-  - echo "dplatz.de" > CNAME
   - git init
   - git config user.name "${GH_USER_NAME}"
   - git config user.email "{GH_USER_EMAIL}"
