@@ -9,6 +9,7 @@ Steps to deploy docker containers to AWS EC2:
 
 . Created a docker-repository with the name `de.dplatz/abc`, you will get a page with all the steps and coordinates for `docker login`, `docker tag` and `docker push`.
 . From CLI run:
++
 [source]
 ----
 aws ecr get-login --region eu-central-1
