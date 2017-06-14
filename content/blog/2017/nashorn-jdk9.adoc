@@ -5,7 +5,7 @@
 :jbake-tags: jdk9, nashorn
 :jbake-status: published
 
-JDK9 is planning to incrementally support the ES6 features of JavaScript. In the current early-access builds (tested with 9-ea+170), major features like classes are not supported yet; but arrow functions and string-interpolation already work:
+JDK9 is planning to incrementally support the ES6 features of JavaScript. In the current early-access builds (tested with 9-ea+170), major features like classes are not supported yet; but keywords like let/const, arrow functions and string-interpolation already works:
 
 [source, javascript]
 ----
@@ -19,3 +19,5 @@ if ($EXEC('uname -n')) {
     hello(hostname, 'daniel');
 }
 ----
+
+For details on what's included by now, read link:http://openjdk.java.net/jeps/292[JEP 292].
