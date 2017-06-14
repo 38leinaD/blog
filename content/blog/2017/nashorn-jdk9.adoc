@@ -1,0 +1,21 @@
+= ES6 with Nashorn in JDK9
+.
+2017-06-14
+:jbake-type: post
+:jbake-tags: jdk9, nashorn
+:jbake-status: published
+
+JDK9 is planning to incrementally support the ES6 features of JavaScript. In the current early-access builds (tested with 9-ea+170), major features like classes are not supported yet; but arrow functions and string-interpolation already work:
+
+[source, javascript]
+----
+#!jjs --language=es6
+"use strict";
+
+let hello = (from, to) => print(`Hello from ${from} to ${to}`);
+
+if ($EXEC('uname -n')) {
+    let hostname = $OUT.trim();
+    hello(hostname, 'daniel');
+}
+----
