@@ -1,0 +1,29 @@
+= Jenkins in Docker using Docker
+.
+2017-09-23
+:jbake-type: post
+:jbake-tags: docker jenkins
+:jbake-status: published
+
+Say you want to run your Jenkins itself in docker. But the Jenkins build-jobs also uses docker!?
+
+Either you have to install docker in docker, or you let the Jenkins docker-client access the host's docker-daemon.
+
+== Steps
+
+. Map the unix socket into the Jenkins container:
++
+----
+-v /var/run/docker.sock:/var/run/docker.sock
+----
+. But the jenkins user will not have permissions to access the socket by default. So, first check the GID of the group that owns the socket:
++
+---
+getent group dockerroot
+---
+. Now create a group (name is irrelevant; lets name it "docker") in the Jenkins container with the same GID and assign the jenkins user to it:
++
+---
+sudo groupadd -g 982 docker
+sudo usermod -aG docker jenkins
+---

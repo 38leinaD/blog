@@ -1,0 +1,30 @@
+= Websphere, JVisualVM and FlameGraphs
+.
+2017-09-18
+:jbake-type: draft
+:jbake-tags: websphere, jvisualvm, jmx, flamegraphs
+:jbake-status: published
+
+http://www.brendangregg.com/FlameGraphs/cpuflamegraphs.html#Java
+
+Application servers > SERVER > Java and Process management > Process Defintion > Java Virtual Machine > Generic JVM arguments:
+
+[source]
+----
+-Djavax.management.builder.initial= \
+-Dcom.sun.management.jmxremote \
+-Dcom.sun.management.jmxremote.authenticate=false \
+-Dcom.sun.management.jmxremote.ssl=false \
+-Dcom.sun.management.jmxremote.local.only=false \
+-Dcom.sun.management.jmxremote.port=1099 \
+-Djava.rmi.server.hostname=10.226.2.64
+----
+
+Providing an external ip or hostname was important for it to work.
+
+Select "Add JMX Connection" in JVisualVM and enter: 10.226.2.64:1099. Use Sampling-profiler to collect perf-data; 
+
+Connection to Webspher MBean server: https://www.monitis.com/blog/configuring-jmx-in-websphere-8-5/
+
+
+https://publib.boulder.ibm.com/httpserv/cookbook/Operating_Systems-Linux.html
