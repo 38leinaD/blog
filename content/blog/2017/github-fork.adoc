@@ -1,0 +1,29 @@
+= Github - Switch to fork
+.
+2017-10-05
+:jbake-type: post
+:jbake-tags: git
+:jbake-status: published
+
+Say you just have cloned a massive github repository (like link:https://github.com/apache/incubator-netbeans[Netbeans]) where cloning already takes minutes and now decide to contribute.
+You will fork the repo and than clone the fork and spend another X minutes waiting?
+
+This sometimes seems like to much of an effort. And thankfully, there are steps how you can transform the already cloned repo to use your fork.
+
+
+. Fork the repo
+. Rename origin to upstream (your fork will be origin)
+
+ git remote rename origin upstream
+
+. Set origin as your fork
+
+ git remote add origin git@github...my-fork
+
+. Fetch origin
+
+ git fetch origin
+
+. Make master track new origin/master
+
+ git checkout -B master --track origin/master
