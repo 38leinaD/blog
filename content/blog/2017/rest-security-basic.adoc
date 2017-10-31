@@ -62,8 +62,6 @@ function handleResponse(response) {
 	} else {
 		response.json().then(function(data) {
 			console.log(data)
-			let healthData = data;
-			healthData.forEach(h => addStatus(h))
 		});
 	}
 }
