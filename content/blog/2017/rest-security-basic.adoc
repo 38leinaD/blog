@@ -1,19 +1,19 @@
-= Implementing REST-security via Basic-auth
+= Implementing JAX-RS-security via Basic-auth
 .
 2017-10-31
 :jbake-type: post
 :jbake-tags: rest, security. javaee
 :jbake-status: published
 
-Basic-auth is the simplest and weakest protection you can add to your resources in a Java EE WAR-file. This post shows how to leverage it for REST-resources that is accessed by a plain JavaScript app.
+Basic-auth is the simplest and weakest protection you can add to your resources in a Java EE application. This post shows how to leverage it for JAX-RS-resources that are accessed by a plain HTML5/JavaScript app.
 
 Additionally, I had the following requirements:
 
-* The REST-resource is requested from a prue JavaScript-based webapp via the fetch-API; I want to leverage the login-dialog from the browser also the webapp (no customer dialog-dialog as the webapp should stay as simple as possible and use as much as possible the standard offered by the browser).
-* But what I don't want is that the whole WAR (i.e. JavaScript app) is protected. Just the request to the REST-endpoint should be protected via Basic-auth
+* The JAX-RS-resource is requested from a prue JavaScript-based webapp via the fetch-API; I want to leverage the authentication-dialog from the browser within the webapp (no custom dialog as the webapp should stay as simple as possible and use as much as possible the standard offered by the browser).
+* But I don't want the whole WAR (i.e. JavaScript app) to be protected. Just the request to the JAX-RS-endpoint should be protected via Basic-auth
 * At the server-side I want to be able to connect to my own/custom identity-store; i.e. I want to programatically check the username/password myself. In other words: I don't want the application-server's internal identity-stores/authentication.
 
-Protecting the REST-endpoint at server-side is as simple as implementing a request-filter. I could have used a low-level servlet-filter, but instead decided to use the JAX-RS-specific equivalent:
+Protecting the JAX-RS-endpoint at server-side is as simple as implementing a request-filter. I could have used a low-level servlet-filter, but instead decided to use the JAX-RS-specific equivalent:
 
 [source,java]
 ----
@@ -49,10 +49,10 @@ public class SecurityFilter implements ContainerRequestFilter {
 }
 ----
 
-If the `Authorization` header is not present, we request the authentication-dialog from the browser to put up by setting the header `WWW-Authenticate=Basic`.
-If i directly open up the REST-resource in the browser, I get the uthentication-dialog from the browser and can access the resource if I provide the correct username and password.
+If the `Authorization` header is not present, we request the authentication-dialog from the browser by sending the header `WWW-Authenticate=Basic`.
+If i directly open up the JAX-RS-resource in the browser, I get the uthentication-dialog from the browser and can access the resource (if I provide the correct username and password).
 
-Now the question is if this also works when the REST-resource if fetched via the JavaScript fetch-API. I tried this:
+Now the question is if this also works when the JAX-RS-resource if fetched via the JavaScript fetch-API. I tried this:
 
 [source,javascript]
 ----
@@ -73,12 +73,12 @@ fetch("http://localhost:8080/service/resources/health").then(handleResponse);
 
 It did not work; I was getting 401 from the server because the browser was not sending the "Authorization" header; but the browser also did not show the authentication-dialog.
 
-A look into the link:https://fetch.spec.whatwg.org/#http-network-fetch[spec] hinted that it should work:
+A peak into the link:https://fetch.spec.whatwg.org/#http-network-fetch[spec] hinted that it should work:
 
 [quote]
 ____
 3. If request’s use-URL-credentials flag is unset or authentication-fetch flag is set, then run these subsubsteps:
-[...]
+...
  2. Let username and password be the result of prompting the end user for a username and password, respectively, in request’s window.
 ____
 
@@ -90,11 +90,11 @@ So, i added the `credentials` to the fetch:
 fetch("http://localhost:8080/service/resources/health", {credentials: 'same-origin'}).then(handleResponse);
 ----
 
-It worked. The browser shows the authentication-dialog after the first 401. In subsequent request to the REST-resouce, the "Authorization" header is always sent along. No need to reenter every time (Chrome discards it as soon as the browser window is closed).
+It worked. The browser shows the authentication-dialog after the first 401. In subsequent request to the JAX-RS-resouce, the "Authorization" header is always sent along. No need to reenter every time (Chrome discards it as soon as the browser window is closed).
 
-The only disadvantage I found so far is from a JavaScript testing-perspective.
-I usually run the REST-endpoint seperately from my Javascript app; i.e. the REST-endpoint is hosted as a WAR in the application-server but the JavaScript-app is hosted via LiveReload or browser-sync.
-In this case, the REST-service and the webapp do not have the same origin (different port) and I have to use the CORS-header `Access-Control-Allow-Origin=\*` to allow communication between the two.
-But with this header set, the Authorization-token collected by the JavaScript-app will not be shared with the REST-endpoint.
+The only disadvantage I found so far is from a development-perspective.
+I usually run the JAX-RS-endpoint seperately from my Javascript app; i.e. the JAX-RS-endpoint is hosted as a WAR in the application-server but the JavaScript-app is hosted via LiveReload or browser-sync.
+In this case, the JAX-RS-service and the webapp do not have the same origin (different port) and I have to use the CORS-header `Access-Control-Allow-Origin=*` to allow communication between the two.
+But with this header set, the Authorization-token collected by the JavaScript-app will not be shared with the JAX-RS-endpoint.
 
 
