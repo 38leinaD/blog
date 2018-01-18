@@ -1,0 +1,27 @@
+= Developer Diary 2017
+.
+2018-01-01
+:jbake-type: page
+:jbake-tags: misc
+:jbake-status: published
+
+== Tuseday, 02.01.2018
+
+=== Docker
+
+Jenkins-user and user in docker have different UIDs and thus there are problems with permissions on mounted volumes.
+Use `-u` flag to map container UID to host UID. More link:https://denibertovic.com/posts/handling-permissions-with-docker-volumes/[here].
+In the end, this will still not work nicely with a lot of containers. Instead of mounting volumes I thus try to use `docker cp` to whenever I can.
+It allows to copy and and out of containers but automatically set correct UIDs on host and container-side.
+
+== Thursday, 18.01.2018
+
+=== Git
+
+Gitlab flow seems like a reasonble workflow. link:https://about.gitlab.com/2014/09/29/gitlab-flow/[]
+
+Why Git flow is considered harmful: link:http://endoflineblog.com/gitflow-considered-harmful[]
+
+Undoing merged: link:https://git-scm.com/blog/2010/03/02/undoing-merges.html[]
+
+When to pull and merge? Linus tells you: link:https://www.mail-archive.com/dri-devel@lists.sourceforge.net/msg39091.html[]
