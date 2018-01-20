@@ -1,0 +1,18 @@
+= Gradle deploy-task
+.
+2017-20-01
+:jbake-type: post
+:jbake-tags: gradle wlp
+:jbake-status: published
+
+Deploy to e.g. Websphere liberty by adding this task to your `build.gradle` file:
+
+[source, groovy]
+----
+task deployToWlp(type: Copy, dependsOn: 'war') {
+    from war.archivePath
+    into "${System.env.wlpProfileHome}/dropins"
+}
+----
+
+Assuming you have the environment-variable set, you can now run `gradlew deployToWlp`.
