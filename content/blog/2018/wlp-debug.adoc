@@ -1,6 +1,6 @@
 = OpenLiberty Debug Config
 .
-2017-01-21
+2018-01-21
 :jbake-type: post
 :jbake-tags: wlp
 :jbake-status: published
