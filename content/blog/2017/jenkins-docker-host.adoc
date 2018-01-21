@@ -9,8 +9,6 @@ Say you want to run your Jenkins itself in docker. But the Jenkins build-jobs al
 
 Either you have to install docker in docker, or you let the Jenkins docker-client access the host's docker-daemon.
 
-== Steps
-
 . Map the unix socket into the Jenkins container:
 +
 ----

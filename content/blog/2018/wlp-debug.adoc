@@ -1,0 +1,17 @@
+= OpenLiberty Debug Config
+.
+2017-01-21
+:jbake-type: post
+:jbake-tags: wlp
+:jbake-status: published
+
+You can run a Websphere/Open Liberty via `${WLP_HOME}/bin/server debug server1` in debug-mode.
+But this makes the server wait for a debugger to attach. How to attach later?
+
+Create a file `${WLP_HOME}/usr/servers/server1/jvm.options` and add the debug-configuration:
+
+----
+-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=7777
+----
+
+Now you can use `${WLP_HOME}/bin/server run server1`.
