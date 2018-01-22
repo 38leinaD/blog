@@ -3,7 +3,7 @@
 2018-01-22
 :jbake-type: post
 :jbake-tags: wlp javaee
-:jbake-status: draft
+:jbake-status: published
 
 When you create a new server in Websphere/Open Liberty via `${WLP_HOME}/bin/server create server1`, the generated `server.xml` is not configured properly for SSL, Java EE, etc.
 Here is a minimal `server.xml` that works:
