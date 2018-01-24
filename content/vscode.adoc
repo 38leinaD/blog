@@ -1,0 +1,12 @@
+= Visual Studio Code
+.
+2018-01-24
+:jbake-type: page
+:jbake-tags: git
+:jbake-status: published
+
+Simulate mouse-hover
+
+----
+Ctlr+K Ctrl+I
+----
