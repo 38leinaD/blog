@@ -56,7 +56,7 @@ dependencies {
 }
 
 war {
-	archiveName 'webapp.war'
+    archiveName 'webapp.war'
 }
 
 task deployToWlp(type: Copy, dependsOn: 'war') {
