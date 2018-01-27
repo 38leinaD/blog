@@ -51,7 +51,7 @@ repositories {
 }
 
 dependencies {
-	providedCompile 'javax:javaee-api:8.0'
+    providedCompile 'javax:javaee-api:8.0'
     testCompile 'junit:junit:4.12'
 }
 
