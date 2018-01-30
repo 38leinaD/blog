@@ -47,6 +47,10 @@ body {
   margin: 20px 0;
 }
 
+.postingdate {
+  color: gray;
+}
+
 /*code {
   font-size: 80%;
 }*/
