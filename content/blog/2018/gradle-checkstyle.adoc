@@ -1,0 +1,24 @@
+= Checkstyke with Gradle
+.
+2018-01-30
+:jbake-type: post
+:jbake-tags: gradle
+:jbake-status: published
+
+Get a checkstyle.xml and; e.g. from link:https://raw.githubusercontent.com/checkstyle/checkstyle/master/src/main/resources/sun_checks.xml[SUN] and place in your gradle-project under `config/checkstyle/checkstyle.xml`.
+
+Now add the following to your `build.gradle`:
+
+[source, groovy]
+----
+apply plugin: 'checkstyle'
+
+checkstyle {
+    showViolations = true
+    ignoreFailures = false
+}
+----
+
+Run with it with `gradle check`.
+
+If there are violations, a HTML-report will be written to `build/reports/checkstyle`.
