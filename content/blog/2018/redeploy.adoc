@@ -7,7 +7,7 @@
 
 The last weeks I have started to experiment how well VSCode can be used for Java EE development.
 I have to say that it is quiet exciting to watch what the guys at Microsoft and Red Hat are doing with the link:https://code.visualstudio.com/docs/languages/java[Java integration].
-The gist of it: It cannot replace a real Java IDE yet for a majority of heavy development, but i can see the potential due to its lightweightness in projects that also invole a JavaScript frontend.
+The gist of it: It cannot replace a real Java IDE yet for a majority of heavy development, but i can see the potential due to its lightweightness in projects that also involve a JavaScript frontend.
 The experience of developing Java and JavaScript in this editor is quiet nice compared to a beast like Eclipse.
 
 One of my first goals for quick development: Reproduce the automatical redeploy you get from IDEs like Eclipse (via JBoss Tools). I.e. changing a Java-class automatically triggers a redeploy of the application.
