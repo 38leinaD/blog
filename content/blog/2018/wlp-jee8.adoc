@@ -64,6 +64,7 @@ war {
 }
 
 task deployToWlp(type: Copy, dependsOn: 'war') {
+    dependsOn 'build'
     from war.archivePath
     into "${System.env.wlpProfileHome}/dropins"
 }
