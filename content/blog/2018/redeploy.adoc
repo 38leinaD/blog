@@ -11,7 +11,7 @@ The experience of developing Java and JavaScript in this editor is quiet nice co
 You can read more about VS Code's and Java integration link:https://code.visualstudio.com/docs/languages/java[here]. 
 
 One of my first goals for quick development: Reproduce the automatical redeploy you get from IDEs like Eclipse (via JBoss Tools). I.e. changing a Java-class automatically triggers a redeploy of the application.
-As long as you make sure the WAR-file is small, this deploy task less then a second and allows for quick iterations.
+As long as you make sure the WAR-file is small, this deploy task takes less then a second and allows for quick iterations.
 
 Here the steps how to make this work in VS Code; actually, they are indenepdent of VS Code and just leverage Gradle's continous-build feature.
 
@@ -38,4 +38,4 @@ Every time you run `gradlew deployToWlp`, this should trigger a redeploy of the 
 
 Now comes the next step: Run `gradlew deployToWlp -t` for link:https://docs.gradle.org/current/userguide/continuous_build.html[continuous builds].
 Every code-change should trigger a redeploy. This is indepdent of any IDE and thus works nicely together with VS Code in case you want this level of interactivity.
-If not, it is very easy to just map a shortcode to the gradle-command to trigger it manually.
+If not, it is very easy to just map a shortcut to the gradle-command in VSCode to trigger it manually.
