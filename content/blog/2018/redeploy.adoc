@@ -1,0 +1,41 @@
+= IDE-indepdenent redeployments with Gradle and OpenLiberty
+.
+2018-02-25
+:jbake-type: post
+:jbake-tags: gradle wlp javaee8 java9 vscode
+:jbake-status: published
+
+The last weeks I have started to experiemnt how well VS Code can be used for Java EE development.
+The gist of it: It cannot replace a real Java IDE yet, but i can see the potential due to its lightweightness in projects that also invole a JavaScript frontend.
+The experience of developing Java and JavaScript in this editor is quiet nice compared to a beast like Eclipse.
+You can read more about VS Code's and Java integration link:https://code.visualstudio.com/docs/languages/java[here]. 
+
+One of my first goals for quick development: Reproduce the automatical redeploy you get from IDEs like Eclipse (via JBoss Tools). I.e. changing a Java-class automatically triggers a redeploy of the application.
+As long as you make sure the WAR-file is small, this deploy task less then a second and allows for quick iterations.
+
+Here the steps how to make this work in VS Code; actually, they are indenepdent of VS Code and just leverage Gradle's continous-build feature.
+
+Place this task in your build.gradle. It deploys your application to the dropins-folder of OpenLiberty if you have set up the environment variable `wlpProfileHome`.
+
+[source, groovy]
+----
+task deployToWlp(type: Copy, dependsOn: 'war') {
+    dependsOn 'build'
+    from war.archivePath
+    into "${System.env.wlpProfileHome}/dropins"
+}
+----
+
+Additionally, make sure to enable automatic redeploys whenever the contents of the folder change.
+
+[source, xml]
+----
+<!-- hot-deploy for dropins -->
+<applicationMonitor updateTrigger="polled" pollingRate="500ms" dropins="dropins" dropinsEnabled="true"/>
+----
+
+Every time you run `gradlew deployToWlp`, this should trigger a redeploy of the latest code.
+
+Now comes the next step: Run `gradlew deployToWlp -t` for link:https://docs.gradle.org/current/userguide/continuous_build.html[continuous builds].
+Every code-change should trigger a redeploy. This is indepdent of any IDE and thus works nicely together with VS Code in case you want this level of interactivity.
+If not, it is very easy to just map a shortcode to the gradle-command to trigger it manually.

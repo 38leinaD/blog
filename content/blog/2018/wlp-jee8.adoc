@@ -30,6 +30,10 @@ Here is a minimal `server.xml` that works:
     <basicRegistry>
     	<user password="admin12!" name="admin"></user>
     </basicRegistry>
+
+    <!-- hot-deploy for dropins -->
+    <applicationMonitor updateTrigger="polled" pollingRate="500ms" 
+                    dropins="dropins" dropinsEnabled="true"/>
 </server>
 ----
 

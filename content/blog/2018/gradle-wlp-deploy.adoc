@@ -10,6 +10,7 @@ Deploy to e.g. Websphere liberty by adding this task to your `build.gradle` file
 [source, groovy]
 ----
 task deployToWlp(type: Copy, dependsOn: 'war') {
+    dependsOn 'build'
     from war.archivePath
     into "${System.env.wlpProfileHome}/dropins"
 }
