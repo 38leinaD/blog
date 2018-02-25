@@ -26,7 +26,7 @@ task deployToWlp(type: Copy, dependsOn: 'war') {
 }
 ----
 
-Additionally, make sure to enable automatic redeploys whenever the contents of the folder change.
+Additionally, make sure to enable automatic redeploys in your `server.xml` whenever the contents of the dropins-folder change.
 
 [source, xml]
 ----
