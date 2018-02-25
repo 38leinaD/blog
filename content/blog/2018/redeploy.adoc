@@ -13,7 +13,7 @@ You can read more about VS Code's and Java integration link:https://code.visuals
 One of my first goals for quick development: Reproduce the automatical redeploy you get from IDEs like Eclipse (via JBoss Tools). I.e. changing a Java-class automatically triggers a redeploy of the application.
 As long as you make sure the WAR-file is small, this deploy task takes less then a second and allows for quick iterations.
 
-Here the steps how to make this work in VS Code; actually, they are indenepdent of VS Code and just leverage Gradle's continous-build feature.
+Here the steps how to make this work in VS Code; actually, they are independent of VSCode and just leverage Gradle's continous-build feature.
 
 Place this task in your build.gradle. It deploys your application to the dropins-folder of OpenLiberty if you have set up the environment variable `wlpProfileHome`.
 
