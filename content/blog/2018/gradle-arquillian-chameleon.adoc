@@ -1,0 +1,70 @@
+= Gradle and Arquillian Chameleon
+.
+2018-02-26
+:jbake-type: post
+:jbake-tags: gradle wlp javaee arquillian wildfly
+:jbake-status: published
+
+The lastest Gradle 4.6 release candiates come with link:https://docs.gradle.org/4.6-rc-2/release-notes.html?_ga=2.148670132.268890152.1519674243-774667617.1508666884#bom-import[BOM-import support].
+
+It can be enabled in the `settings.gradle` by defining `enableFeaturePreview('IMPROVED_POM_SUPPORT')`.
+
+With this, the Arquillian BOM can be easily imported and the dependecies to use Arquillian with the Chameleon Adapter look like the following:
+
+[source, groovy]
+----
+dependencies {
+    providedCompile 'javax:javaee-api:7.0'
+
+	// this is the BOM
+	testCompile 'org.jboss.arquillian:arquillian-bom:1.3.0.Final'
+	testCompile 'org.jboss.arquillian.junit:arquillian-junit-container'
+	testCompile 'org.arquillian.container:arquillian-container-chameleon:1.0.0.Beta3'
+
+    testCompile 'junit:junit:4.12'
+    testCompile 'org.mockito:mockito-core:2.10.0'
+}
+----
+
+Chameleon allows to easily manage the container adapters by simple configuration in the `arquillian.xml`.
+As of today, Wildfly and Glassfish are supported but not Websphere liberty.
+
+To define Wildfly 11, the following `arquillian.xml` (place under `src/test/resources`) is sufficient:
+
+[source, xml]
+----
+<?xml version="1.0" encoding="UTF-8"?>
+<arquillian xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns="http://jboss.org/schema/arquillian"
+    xsi:schemaLocation="http://jboss.org/schema/arquillian http://jboss.org/schema/arquillian/arquillian_1_0.xsd">
+
+    <container qualifier="wildfly" default="true">
+        <configuration>
+            <property name="chameleonTarget">wildfly:11.0.0.Final:managed</property>
+        </configuration>
+    </container>
+</arquillian>
+----
+
+With this little bit of Gradle and Arquillian magic, you should be able to run a test like below. The Wildfly 11 container will be downloaded on the fly.
+
+[source, java]
+----
+@RunWith(Arquillian.class)
+public class GreetingServiceTest {
+
+	@Deployment
+	public static WebArchive deployService() {
+		return ShrinkWrap.create(WebArchive.class)
+				.addClass(Service.class);
+	}
+
+	@Inject
+	private Service service;
+
+	@Test
+	public void shouldGreetTheWorld() throws Exception {
+		Assert.assertEquals("hello world", service.hello());
+	}
+}
+----
