@@ -1,4 +1,4 @@
-= Gradle and Arquillian for OpenLiberty
+= Gradle and Arquillian for Wildfly
 .
 2018-02-28
 :jbake-type: post
@@ -27,6 +27,8 @@ dependencies {
     testCompile 'org.mockito:mockito-core:2.10.0'
 }
 ----
+
+NOTE: Note that the BOM-import will only work with Gradle 4.6+
 
 An `arquillian.xml` for both adapters looks like the following. The `arquillian-wildfly-managed` config is enabled here by default.
 
