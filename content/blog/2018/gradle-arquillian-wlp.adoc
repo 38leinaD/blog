@@ -14,13 +14,13 @@ The dependencies are straight-forward as for any other container-adapter except 
 dependencies {
     providedCompile 'javax:javaee-api:7.0'
 
-	// this is the BOM
-	testCompile 'org.jboss.arquillian:arquillian-bom:1.3.0.Final'
-	testCompile 'org.jboss.arquillian.junit:arquillian-junit-container'
-	
-	testCompile files("${System.properties['java.home']}/../lib/tools.jar")
-	testCompile 'org.jboss.arquillian.container:arquillian-wlp-managed-8.5:1.0.0.CR1'
-	
+    // this is the BOM
+    testCompile 'org.jboss.arquillian:arquillian-bom:1.3.0.Final'
+    testCompile 'org.jboss.arquillian.junit:arquillian-junit-container'
+
+    testCompile files("${System.properties['java.home']}/../lib/tools.jar")
+    testCompile 'org.jboss.arquillian.container:arquillian-wlp-managed-8.5:1.0.0.CR1'
+    
     testCompile 'junit:junit:4.12'
     testCompile 'org.mockito:mockito-core:2.10.0'
 }
@@ -35,11 +35,11 @@ A minimalistic `arquillian.xml` looks like the following:
     xmlns="http://jboss.org/schema/arquillian"
     xsi:schemaLocation="http://jboss.org/schema/arquillian http://jboss.org/schema/arquillian/arquillian_1_0.xsd">
 
-	<engine>
-		<property name="deploymentExportPath">build/deployments</property>
-	</engine>
+    <engine>
+        <property name="deploymentExportPath">build/deployments</property>
+    </engine>
 
-	<container qualifier="wlp-dropins-deployment" default="true">
+    <container qualifier="wlp-dropins-deployment" default="true">
         <configuration>
             <property name="wlpHome">${wlp.home}</property>
             <property name="deployType">dropins</property>
@@ -56,8 +56,8 @@ Also, you might not want to hard-code the `wlp.home` here. Instead you can defin
 
 ----
 test {
-	systemProperty "arquillian.launch", "wlp-dropins-deployment"
-	systemProperty "wlp.home", project.properties['wlp.home']
+    systemProperty "arquillian.launch", "wlp-dropins-deployment"
+    systemProperty "wlp.home", project.properties['wlp.home']
 }
 ----
 

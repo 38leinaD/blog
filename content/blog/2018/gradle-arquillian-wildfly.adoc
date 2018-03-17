@@ -16,12 +16,12 @@ Below you will find the dependencies for both types of adpaters.
 dependencies {
     providedCompile 'javax:javaee-api:7.0'
 
-	// this is the BOM
-	testCompile 'org.jboss.arquillian:arquillian-bom:1.3.0.Final'
-	testCompile 'org.jboss.arquillian.junit:arquillian-junit-container'
-	
-	testCompile 'org.wildfly.arquillian:wildfly-arquillian-container-managed:2.1.0.Final'
-	testCompile 'org.wildfly.arquillian:wildfly-arquillian-container-remote:2.1.0.Final'
+    // this is the BOM
+    testCompile 'org.jboss.arquillian:arquillian-bom:1.3.0.Final'
+    testCompile 'org.jboss.arquillian.junit:arquillian-junit-container'
+
+    testCompile 'org.wildfly.arquillian:wildfly-arquillian-container-managed:2.1.0.Final'
+    testCompile 'org.wildfly.arquillian:wildfly-arquillian-container-remote:2.1.0.Final'
 
     testCompile 'junit:junit:4.12'
     testCompile 'org.mockito:mockito-core:2.10.0'
@@ -39,26 +39,26 @@ An `arquillian.xml` for both adapters looks like the following. The `arquillian-
     xmlns="http://jboss.org/schema/arquillian"
     xsi:schemaLocation="http://jboss.org/schema/arquillian http://jboss.org/schema/arquillian/arquillian_1_0.xsd">
 
-	<engine>
-		<property name="deploymentExportPath">build/deployments</property>
-	</engine>
+    <engine>
+        <property name="deploymentExportPath">build/deployments</property>
+    </engine>
 
-	<!-- Start JBoss manually via:
-		./standalone.sh -Djboss.socket.binding.port-offset=100 -server-config=standalone-full.xml
-	 -->
-	<container qualifier="arquillian-wildfly-remote">
-		<configuration>
-			<property name="managementPort">10090</property>
-		</configuration>
-	</container>
+    <!-- Start JBoss manually via:
+        ./standalone.sh -Djboss.socket.binding.port-offset=100 -server-config=standalone-full.xml
+     -->
+    <container qualifier="arquillian-wildfly-remote">
+        <configuration>
+            <property name="managementPort">10090</property>
+        </configuration>
+    </container>
 
-	<container qualifier="arquillian-wildfly-managed" default="true">
-		<configuration>
-			<property name="jbossHome">/home/daniel/dev/app-servers/jboss-eap-7.0-test</property>
-			<property name="serverConfig">${jboss.server.config.file.name:standalone-full.xml}</property>
-			<property name="allowConnectingToRunningServer">true</property>
-		</configuration>
-	</container>
+    <container qualifier="arquillian-wildfly-managed" default="true">
+        <configuration>
+            <property name="jbossHome">/home/daniel/dev/app-servers/jboss-eap-7.0-test</property>
+            <property name="serverConfig">${jboss.server.config.file.name:standalone-full.xml}</property>
+            <property name="allowConnectingToRunningServer">true</property>
+        </configuration>
+    </container>
 </arquillian>
 ----
 
@@ -68,6 +68,6 @@ In case you don't want to define a default adapater or overwrite it (e.g. via a 
 
 ----
 test {
-	systemProperty "arquillian.launch", "arquillian-wildfly-managed"
+    systemProperty "arquillian.launch", "arquillian-wildfly-managed"
 }
 ----
