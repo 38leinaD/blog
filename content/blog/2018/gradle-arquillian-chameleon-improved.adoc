@@ -22,7 +22,7 @@ With this, we only have to add a single dependency to use arquillian:
 dependencies {
     providedCompile 'javax:javaee-api:7.0'
 
-	testCompile 'org.arquillian.container:arquillian-chameleon-junit-container-starter:1.0.0.CR2'
+    testCompile 'org.arquillian.container:arquillian-chameleon-junit-container-starter:1.0.0.CR2'
 
     testCompile 'junit:junit:4.12'
     testCompile 'org.mockito:mockito-core:2.10.0'
@@ -38,19 +38,19 @@ Also note the new `@RunWith(ArquillianChameleon.class)`. This not the regular `@
 @ChameleonTarget("wildfly:11.0.0.Final:managed")
 public class GreetingServiceTest {
 
-	@Deployment
-	public static WebArchive deployService() {
-		return ShrinkWrap.create(WebArchive.class)
-				.addClass(Service.class);
-	}
+    @Deployment
+    public static WebArchive deployService() {
+        return ShrinkWrap.create(WebArchive.class)
+                .addClass(Service.class);
+    }
 
-	@Inject
-	private Service service;
+    @Inject
+    private Service service;
 
-	@Test
-	public void shouldGreetTheWorld() throws Exception {
-		Assert.assertEquals("hello world", service.hello());
-	}
+    @Test
+    public void shouldGreetTheWorld() throws Exception {
+        Assert.assertEquals("hello world", service.hello());
+    }
 }
 ----
 
