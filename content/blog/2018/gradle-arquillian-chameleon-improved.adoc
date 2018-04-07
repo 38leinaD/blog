@@ -13,7 +13,7 @@ it is now possible to minimize the require configuration:
 * Only a single dependency
 * No `arquillian.xml`
 
-As before, I assume  Gradle 4.6 with `enableFeaturePreview('IMPROVED_POM_SUPPORT')` in the `settings.gradle` to enable the advanced POM-support.
+As before, I assume  Gradle 4.6 with `enableFeaturePreview('IMPROVED_POM_SUPPORT')` in the `settings.gradle`.
 
 With this, we only have to add a single dependency to use arquillian:
 
@@ -30,7 +30,7 @@ dependencies {
 ----
 
 The container which is used, only need to be defined via the `@ChameleonTarget` annotation.
-Also note the new `@RunWith(ArquillianChameleon.class)`. This not the regular `@RunWith(ArquillianChameleon.class).
+Also note the new `@RunWith(ArquillianChameleon.class)`. This not the regular `@RunWith(ArquillianChameleon.class)`.
 
 [source, java]
 ----
