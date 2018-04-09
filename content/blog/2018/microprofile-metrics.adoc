@@ -1,0 +1,98 @@
+= MicroProfile Metrics
+.
+2018-04-10
+:jbake-type: post
+:jbake-tags: microprofile
+:jbake-status: draft
+
+These are my personal notes on getting familiar with link:https://github.com/eclipse/microprofile-bom/releases/download/1.3/microprofile-spec-1.3.pdf[MicroProfile 1.3]. In specific Metrics 1.1.
+As a basis, I have been using link:https://openliberty.io/guides/microprofile-metrics.html[the tutorial on OpenLiberty.io].
+Not suprising, I am using OpenLiberty (version 18.0.0.1). The `server.xml` which serves as the starting-point is described link:http://dplatz.de/blog/2018/wlp-jee8.html[here].
+I am just listing the used features here:
+
+.server.xml
+[source, xml]
+----
+<featureManager>
+    <feature>javaee-7.0</feature>
+    <feature>localConnector-1.0</feature>
+    <feature>mpMetrics-1.1</feature>
+</featureManager>
+----
+
+Some differences:
+
+* `javaee-7.0` is used, as Java EE 8 seems not supported yet by the release builds.
+* `mpMetrics-1.1` for MircoProfile metrics support
+
+As a starting-point for the actual project I am using my link:https://github.com/38leinaD/project-starter/tree/master/war-jee7[Java EE WAR template].
+
+To get started with metrics, add the following dependency:
+
+----
+providedCompile 'org.eclipse.microprofile.metrics:microprofile-metrics-api:1.1'
+----
+
+Now lets write a simple Rest-service to produce some metrics.
+
+[source, java]
+----
+@Stateless
+@Path("magic")
+public class MagicNumbersResource {
+
+	static int magicNumber = 0;
+
+	@POST
+	@Consumes("text/plain")
+	@Counted(name = "helloCount", absolute = true, monotonic = true, description = "Number of times the hello() method is requested")
+	@Timed(name = "helloRequestTime", absolute = true, description = "Time needed to get the hello-message")
+	public void setMagicNumber(Integer num) throws InterruptedException {
+		TimeUnit.SECONDS.sleep(2);
+		magicNumber = num;
+	}
+
+	@Gauge(unit = MetricUnits.NONE, name = "magicNumberGuage", absolute = true, description = "Magic number")
+	public int getMagicNumber() {
+		return magicNumber;
+	}
+}
+----
+
+Deploy and invoke `curl -X POST -H "Content-Type: text/plain" -d "42" http://localhost:9080/mptest/resources/magic`.
+
+Now open http://localhost:9080/metrics in the browser. You should see the following prometheus-formatted metrics:
+
+----
+# TYPE application:hello_request_time_rate_per_second gauge
+application:hello_request_time_rate_per_second 0.1672874737158507
+# TYPE application:hello_request_time_one_min_rate_per_second gauge
+application:hello_request_time_one_min_rate_per_second 0.2
+# TYPE application:hello_request_time_five_min_rate_per_second gauge
+application:hello_request_time_five_min_rate_per_second 0.2
+# TYPE application:hello_request_time_fifteen_min_rate_per_second gauge
+application:hello_request_time_fifteen_min_rate_per_second 0.2
+# TYPE application:hello_request_time_mean_seconds gauge
+application:hello_request_time_mean_seconds 2.005084111
+# TYPE application:hello_request_time_max_seconds gauge
+application:hello_request_time_max_seconds 2.005084111
+# TYPE application:hello_request_time_min_seconds gauge
+application:hello_request_time_min_seconds 2.005084111
+# TYPE application:hello_request_time_stddev_seconds gauge
+application:hello_request_time_stddev_seconds 0.0
+# TYPE application:hello_request_time_seconds summary
+# HELP application:hello_request_time_seconds Time needed to get the hello-message
+application:hello_request_time_seconds_count 1
+application:hello_request_time_seconds{quantile="0.5"} 2.005084111
+application:hello_request_time_seconds{quantile="0.75"} 2.005084111
+application:hello_request_time_seconds{quantile="0.95"} 2.005084111
+application:hello_request_time_seconds{quantile="0.98"} 2.005084111
+application:hello_request_time_seconds{quantile="0.99"} 2.005084111
+application:hello_request_time_seconds{quantile="0.999"} 2.005084111
+# TYPE application:magic_number_guage gauge
+# HELP application:magic_number_guage Magic number
+application:magic_number_guage 42
+# TYPE application:hello_count counter
+# HELP application:hello_count Number of times the hello() method is requested
+application:hello_count 1
+----

@@ -1,0 +1,40 @@
+= Websphere Traditional Autodeploy
+.
+2018-04-09
+:jbake-type: post
+:jbake-tags: websphere
+:jbake-status: draft
+
+The software I work with on my job is portable accross different application-servers; including Websphere Trational, Websphere Liberty and JBoss.
+In the past, took cosiderable time for me to test/make sure a feature works as expected on Websphere.
+In part, because it was hard for me to keep all different websphere version installed on my machine and not mess them up over time.
+
+Now, with the link:https://hub.docker.com/r/ibmcom/websphere-traditional/[docker images provided by IBM], it has become very easy.
+Just fire up a container and test it.
+
+To make the testing/deployment very easy, I have enabled auto-deploy in link:https://github.com/38leinaD/docker-images/tree/master/websphere-9[my container-image].
+
+The image contains a jython script so you don't have to apply this configuration manually.
+
+[source, python]
+----
+import java.lang.System as sys
+
+cell = AdminConfig.getid('/Cell:DefaultCell01/')
+md = AdminConfig.showAttribute(cell, "monitoredDirectoryDeployment")
+AdminConfig.modify(md, [['enabled', "true"]])
+AdminConfig.modify(md, [['pollingInterval', "1"]])
+#AdminConfig.modify(md, [['monitoredDirectory', "/newPath"]])
+
+print AdminConfig.show(md)
+
+AdminConfig.save()
+
+print 'Done.'
+----
+
+
+It allows me to work with VSCode and Gradle as I have described in link:http://dplatz.de/blog/2018/redeploy.html[this post].
+Simply mount the auto-deploy folder as a volume:
+
+TODO
