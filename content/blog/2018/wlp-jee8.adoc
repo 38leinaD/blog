@@ -5,6 +5,8 @@
 :jbake-tags: wlp javaee
 :jbake-status: published
 
+I am working of the latest Development Builds of Open Liberty supporting Java EE 8. You can download them link:https://openliberty.io/downloads/[here] under "Development builds".
+
 When you create a new server in Websphere/Open Liberty via `${WLP_HOME}/bin/server create server1`, the generated `server.xml` is not configured properly for SSL, Java EE, etc.
 Here is a minimal `server.xml` that works:
 
@@ -27,9 +29,7 @@ Here is a minimal `server.xml` that works:
     <!-- Automatically expand WAR files and EAR files -->
     <applicationManager autoExpand="true"/>
 
-    <basicRegistry>
-    	<user password="admin12!" name="admin"></user>
-    </basicRegistry>
+    <quickStartSecurity userName="admin" userPassword="admin12!"/>
 
     <!-- hot-deploy for dropins -->
     <applicationMonitor updateTrigger="polled" pollingRate="500ms" 
