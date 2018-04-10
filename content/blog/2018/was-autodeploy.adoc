@@ -1,12 +1,12 @@
-= Websphere Traditional Autodeploy
+= Websphere Traditional, Docker and Auto-Deployment
 .
-2018-04-09
+2018-04-10
 :jbake-type: post
-:jbake-tags: websphere
-:jbake-status: draft
+:jbake-tags: websphere docker
+:jbake-status: published
 
 The software I work with on my job is portable accross different application-servers; including Websphere Trational, Websphere Liberty and JBoss.
-In the past, took cosiderable time for me to test/make sure a feature works as expected on Websphere.
+In the past, it took cosiderable time for me to test/make sure a feature works as expected on Websphere.
 In part, because it was hard for me to keep all different websphere version installed on my machine and not mess them up over time.
 
 Now, with the link:https://hub.docker.com/r/ibmcom/websphere-traditional/[docker images provided by IBM], it has become very easy.
@@ -24,7 +24,6 @@ cell = AdminConfig.getid('/Cell:DefaultCell01/')
 md = AdminConfig.showAttribute(cell, "monitoredDirectoryDeployment")
 AdminConfig.modify(md, [['enabled', "true"]])
 AdminConfig.modify(md, [['pollingInterval', "1"]])
-#AdminConfig.modify(md, [['monitoredDirectory', "/newPath"]])
 
 print AdminConfig.show(md)
 
@@ -35,6 +34,12 @@ print 'Done.'
 
 
 It allows me to work with VSCode and Gradle as I have described in link:http://dplatz.de/blog/2018/redeploy.html[this post].
-Simply mount the auto-deploy folder as a volume:
 
-TODO
+Start the docker container with below command to mount the auto-deploy folder as a volume:
+
+----
+docker run --name was9 --rm -p 9060:9060 -p 9080:9080 -v ~/junk/deploy:/opt/IBM/WebSphere/AppServer/profiles/AppSrv01/monitoredDeployableApps 38leinad/websphere-9
+----
+
+You can now copy a WAR file to `~/junk/deploy/servers/server1/` on your local system and it will get deployed automatically within the container.
+
