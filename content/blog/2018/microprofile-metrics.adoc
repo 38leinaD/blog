@@ -59,7 +59,13 @@ public class MagicNumbersResource {
 }
 ----
 
-Deploy and invoke `curl -X POST -H "Content-Type: text/plain" -d "42" http://localhost:9080/mptest/resources/magic`.
+I am using:
+
+* A `@Timed` metric that records the percentiles and averages for the duration of the method-invocation
+* A `@Counted` metric that counts the number of invocations
+* A `@Gauge` metric that just takes the return-value of the annotated method as the metric-value.
+
+Now deploy and invoke `curl -X POST -H "Content-Type: text/plain" -d "42" http://localhost:9080/mptest/resources/magic`. (This assumes the application/WAR is named `mptest`).
 
 Now open http://localhost:9080/metrics in the browser. You should see the following prometheus-formatted metrics:
 
@@ -96,6 +102,12 @@ application:magic_number_guage 42
 # HELP application:hello_count Number of times the hello() method is requested
 application:hello_count 1
 ----
+
+We see:
+
+* `application:hello_request_time_seconds{quantile="0.999"} 2.005084111` as one of the percentiles from `@Timed`. Due to the sleep, it is close to two seconds.
+* `application:hello_count 1` as we invoked the method once via curl. This metrics is based on `@Counted`.
+* `application:magic_number_guage 42` as we did a post with curl to set the `magicNumber` to 42. This metric is based on the `@Gauge`.
 
 As a final note: I like the Java EE-approach of having a single dependency to develop against (`javax:javaee-api:7.0`).
 I have used the same approach here for the Microprofile.
