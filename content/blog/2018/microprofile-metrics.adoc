@@ -22,7 +22,7 @@ I am just listing the used features here:
 
 Some differences:
 
-* `javaee-7.0` is used, as Java EE 8 seems not supported yet by the release builds.
+* `javaee-7.0` is used, as Java EE 8 seems not to be supported yet by the release builds.
 * `microProfile-1.3` to enable all features as part of MicroProfile 1.3
 
 As a starting-point for the actual project I am using my link:https://github.com/38leinaD/project-starter/tree/master/war-jee7[Java EE WAR template].
