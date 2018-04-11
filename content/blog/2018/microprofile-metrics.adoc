@@ -1,9 +1,9 @@
 = MicroProfile Metrics
 .
-2018-04-10
+2018-04-11
 :jbake-type: post
-:jbake-tags: microprofile
-:jbake-status: draft
+:jbake-tags: microprofile liberty
+:jbake-status: published
 
 These are my personal notes on getting familiar with link:https://github.com/eclipse/microprofile-bom/releases/download/1.3/microprofile-spec-1.3.pdf[MicroProfile 1.3]. In specific Metrics 1.1.
 As a basis, I have been using link:https://openliberty.io/guides/microprofile-metrics.html[the tutorial on OpenLiberty.io].
@@ -16,22 +16,22 @@ I am just listing the used features here:
 <featureManager>
     <feature>javaee-7.0</feature>
     <feature>localConnector-1.0</feature>
-    <feature>mpMetrics-1.1</feature>
+    <feature>microProfile-1.3</feature>
 </featureManager>
 ----
 
 Some differences:
 
 * `javaee-7.0` is used, as Java EE 8 seems not supported yet by the release builds.
-* `mpMetrics-1.1` for MircoProfile metrics support
+* `microProfile-1.3` to enable all features as part of MicroProfile 1.3
 
 As a starting-point for the actual project I am using my link:https://github.com/38leinaD/project-starter/tree/master/war-jee7[Java EE WAR template].
 
-To get started with metrics, add the following dependency:
+To get all MicroProfile 1.3 dependencies available in your gradle-build, you can add the following provided-dependency:
 
 ----
-providedCompile 'org.eclipse.microprofile.metrics:microprofile-metrics-api:1.1'
-----
+providedCompile 'org.eclipse.microprofile:microprofile:1.3'
+---- 
 
 Now lets write a simple Rest-service to produce some metrics.
 
@@ -96,3 +96,21 @@ application:magic_number_guage 42
 # HELP application:hello_count Number of times the hello() method is requested
 application:hello_count 1
 ----
+
+As a final note: I like the Java EE-approach of having a single dependency to develop against (`javax:javaee-api:7.0`).
+I have used the same approach here for the Microprofile.
+If you instead only want to enable the metrics-feature in Liberty and only want to program against the related API, you can instead have used the following feature in the `server.xml`:
+
+----
+<feature>mpMetrics-1.1</feature>
+----
+
+And the following dependency in your `build.gradle`:
+
+----
+providedCompile 'org.eclipse.microprofile.metrics:microprofile-metrics-api:1.1'
+----
+
+I find this approach more cumbersome if multiple MicroProfile APIs are used; and the neglectable difference in startup-time of Liberty confirms that there is no disadvantage.
+
+In a later post we will look at what can be done with the metrics.
