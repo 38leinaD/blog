@@ -8,7 +8,7 @@
 Recently, I read link:http://bmuschko.com/blog/gradle-docker-compose/[this] article on a nice Gradle-plugin that allows to use Docker Compose from Gradle.
 I wanted to try it out myself with a simple JavaEE app deployed on Open Liberty. In specific, the setup is as follows: The JavaEE application (exposing a Rest endpoint) is deployed on OpenLiberty running within Docker. The system-tests are invocing the Rest endpoint from outside the Docker environment via HTTP.
 
-I had two requirements that I wanted to test/verify in specific:
+I had two requirements that I wanted to verify in specific:
 
 * Usually, when the containers are started from docker-perspecive, it does not mean that also the deployed application is fully up and running. Either you have to write some custom code that monitors the application-log for some marker; or, we can leverage the Docker health-check. Does the Docker Compose Gradle-plugin provide any integration for this so we only run the system-tests once the application is up?
 
@@ -16,7 +16,7 @@ I had two requirements that I wanted to test/verify in specific:
 
 Indeed, the Gradle-plugin helps us with these two requirements.
 
-== Rest Service under Test
+=== Rest Service under Test
 
 The Rest endpoint under test looks like this:
 
@@ -45,7 +45,7 @@ public class PingResource {
 
 I added some simple logic here to only return HTTP status code 200 after some number of request. This is to verify the health-check mechanism works as expected.
 
-== System Test
+=== System Test
 
 The system-tests is a simple JUnit test using the JAX-RS client to invoke the ping endpoint.
 
@@ -73,7 +73,7 @@ public class PingST {
 You can already see here, that we read the port from an environment variable.
 Also, the test should only succeed when we get the response UP.
 
-== Docker Compose
+=== Docker Compose
 
 The`docker-compose.yml` looks as follows:
 
@@ -100,7 +100,7 @@ The ping service should only show up ad healthy after ~ 30 + 10 * 5 seconds. Thi
 
 If the Gradle-plugin makes sure to only run the tests once the health of the container is Ok, the `PingST` should pass successfully.
 
-== Gradle Build
+=== Gradle Build
 
 The latest part is the `build.gradle` that brings it all together:
 
@@ -162,7 +162,7 @@ We also use `dockerCompose.exposeAsEnvironment(itest)` to expose the dynamic por
 
 Please note that the way I chose to seperate unit-tests and system-tests here in the `build.gradle` is very pragmatic but might not be ideal for bigger projects. Both tests share the same classpath. You might want to have a seperate Gradle-project for the system-tests altogether.
 
-== Wrapping it up
+=== Wrapping it up
 
 We can now run `gradle systemTest` to run our system-tests.
 It will first start the Docker environment and monitor the health of the containers.
