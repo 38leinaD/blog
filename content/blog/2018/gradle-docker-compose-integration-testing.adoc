@@ -1,0 +1,173 @@
+= Gradle and Docker Compose for System Testing
+.
+2018-05-06
+:jbake-type: post
+:jbake-tags: gradle javaee docker-compose
+:jbake-status: published
+
+Recently, I read link:http://bmuschko.com/blog/gradle-docker-compose/[this] article on a nice Gradle-plugin that allows to use Docker Compose from Gradle.
+I wanted to try it out myself with a simple JavaEE app deployed on Open Liberty. In specific, the setup is as follows: The JavaEE application (exposing a Rest endpoint) is deployed on OpenLiberty running within Docker. The system-tests are invocing the Rest endpoint from outside the Docker environment via HTTP.
+
+I had two requirements that I wanted to test/verify in specific:
+
+* Usually, when the containers are started from docker-perspecive, it does not mean that also the deployed application is fully up and running. Either you have to write some custom code that monitors the application-log for some marker; or, we can leverage the Docker health-check. Does the Docker Compose Gradle-plugin provide any integration for this so we only run the system-tests once the application is up?
+
+* System-test will be running on the Jenkins server. Ideally, a lot of tests are running in parallel. For this, it is necessary to use dynamic ports. Otherwise, there could conflicts for the exposed HTTP ports used by the different system-tests. The system-tests somehow needs to be aware of these dynamic ports. Does the Gradle-plugin help us with this?
+
+Indeed, the Gradle-plugin helps us with these two requirements.
+
+== Rest Service under Test
+
+The Rest endpoint under test looks like this:
+
+[source, java]
+----
+@Stateless
+@Path("ping")
+public class PingResource {
+
+	static AtomicInteger counter = new AtomicInteger();
+
+	@GET
+	public Response ping() {
+		if (counter.incrementAndGet() > 10) {
+			System.out.println("++ UP");
+			return Response.ok("UP@" + System.currentTimeMillis()).build();
+		}
+		else {
+			System.out.println("++ DOWN");
+			return Response.serverError().build();
+		}
+		
+	}
+}
+----
+
+I added some simple logic here to only return HTTP status code 200 after some number of request. This is to verify the health-check mechanism works as expected.
+
+== System Test
+
+The system-tests is a simple JUnit test using the JAX-RS client to invoke the ping endpoint.
+
+[source, java]
+----
+public class PingST {
+
+    @Test
+    public void testMe() {
+        System.getenv().entrySet().forEach(e -> {
+            System.out.println("+ " + e.getKey() + ": " + e.getValue());
+        });
+        Response response = ClientBuilder.newClient()
+            .target("http://localhost:"+ System.getenv("PING_TCP_9080") +"/ping")
+            .path("resources/ping")
+            .request()
+            .get();
+
+        assertThat(response.getStatus(), CoreMatchers.is(200));
+        assertThat(response.readEntity(String.class), CoreMatchers.startsWith("UP"));
+    }
+}
+----
+
+You can already see here, that we read the port from an environment variable.
+Also, the test should only succeed when we get the response UP.
+
+== Docker Compose
+
+The`docker-compose.yml` looks as follows:
+
+[source, yml]
+----
+version: '3.4'
+services:
+  ping:
+    image: openliberty/open-liberty:javaee7
+    ports:
+     - "9080"
+    volumes:
+     - "./build/libs/:/config/dropins/"
+    healthcheck:
+      test: wget --quiet --tries=1 --spider http://localhost:9080/ping/resources/ping || exit 1
+      interval: 5s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+----
+
+We are using the health-check feature here. If you run `docker ps` the column `STATUS` will tell you the health of the container based on executing this command.
+The ping service should only show up ad healthy after ~ 30 + 10 * 5 seconds. This is because it will only start the health-checks after 30 seconds. And then the first 10 requests will return response-code 500. After this, it will flip to status-code 200 and return UP.
+
+If the Gradle-plugin makes sure to only run the tests once the health of the container is Ok, the `PingST` should pass successfully.
+
+== Gradle Build
+
+The latest part is the `build.gradle` that brings it all together:
+
+[source, groovy]
+----
+plugins {
+    id 'com.avast.gradle.docker-compose' version '0.7.1'<1>
+}
+
+apply plugin: 'war'
+apply plugin: 'maven'
+apply plugin: 'eclipse-wtp'
+
+group = 'de.dplatz'
+version = '1.0-SNAPSHOT'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+    providedCompile 'javax:javaee-api:7.0'
+
+    testCompile 'org.glassfish.jersey.core:jersey-client:2.25.1'
+    testCompile 'junit:junit:4.12'
+}
+
+war {
+	archiveName 'ping.war'
+}
+
+dockerCompose {<2>
+    useComposeFiles = ['docker-compose.yml']
+    isRequiredBy(project.tasks.systemTest)
+}
+
+task systemTest( type: Test ) {<3>
+    include '**/*ST*'
+    doFirst {
+        dockerCompose.exposeAsEnvironment(systemTest)
+    }
+}
+
+test {
+    exclude '**/*ST*'
+}
+----
+<1> The Docker Compose gradle-plugin
+<2> A seperate task to run system-tests
+<3> The task to start the Docker environment based on the `docker-compose.yml`
+
+The tasks `composeUp` and `composeDown` can be used to manually start/stop the environment, but the system-test task (`systemTest`) has a dependency on the Docker environment via `isRequiredBy(project.tasks.itest)`.
+
+We also use `dockerCompose.exposeAsEnvironment(itest)` to expose the dynamic ports as environment variables to `PingST`. In the `PingST` class you can see that `PING_TCP_9080` is the environment variable name that contains the exposed port on the host for the container-port 9080.
+
+Please note that the way I chose to seperate unit-tests and system-tests here in the `build.gradle` is very pragmatic but might not be ideal for bigger projects. Both tests share the same classpath. You might want to have a seperate Gradle-project for the system-tests altogether.
+
+== Wrapping it up
+
+We can now run `gradle systemTest` to run our system-tests.
+It will first start the Docker environment and monitor the health of the containers.
+Only when the contain is healthy (i.e. the application is fully up and running), will gradle continue and execute `PingST`.
+
+Also, ports are dynamically assigned and the `PingST` reads them from the environment. With this approach, we can safely run the tests on Jenkins where other tests might already be using ports like 9080.
+
+The `com.avast.gradle.docker-compose` plugin allows us to easily integrate system-tests for JavaEE applications (using Docker) into our Gradle build.
+Doing it this way, allows every developer that has Docker installed, to run these tests locally as well and not only on Jenkins.
