@@ -75,7 +75,7 @@ Also, the test should only succeed when we get the response UP.
 
 === Docker Compose
 
-The`docker-compose.yml` looks as follows:
+The `docker-compose.yml` looks as follows:
 
 [source, yml]
 ----
