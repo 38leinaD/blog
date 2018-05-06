@@ -148,12 +148,13 @@ task systemTest( type: Test ) {<3>
 }
 
 test {
-    exclude '**/*ST*'
+    exclude '**/*ST*'<4>
 }
 ----
 <1> The Docker Compose gradle-plugin
 <2> A seperate task to run system-tests
 <3> The task to start the Docker environment based on the `docker-compose.yml`
+<4> Don't run system-tests as part of the regular unit-test task
 
 The tasks `composeUp` and `composeDown` can be used to manually start/stop the environment, but the system-test task (`systemTest`) has a dependency on the Docker environment via `isRequiredBy(project.tasks.itest)`.
 
