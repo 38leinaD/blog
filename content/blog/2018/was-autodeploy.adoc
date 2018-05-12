@@ -43,6 +43,6 @@ docker run --name was9 --rm -p 9060:9060 -p 9080:9080 -p 7777:7777 -v ~/junk/dep
 
 You can now copy a WAR file to `~/junk/deploy/servers/server1/` on your local system and it will get deployed automatically within the container.
 
-NOTE: Since this post I have extended the `was-9` container that you can directly mount `/opt/IBM/WebSphere/AppServer/profiles/AppSrv01/monitoredDeployableApps/servers/server1/`.
+NOTE: After this post, I have extended the `was-9` container tou can directly mount `/opt/IBM/WebSphere/AppServer/profiles/AppSrv01/monitoredDeployableApps/servers/server1/`.
 It even supports deployment of a WAR/EAR that is already in this folder when the container is started. This is not the default behaviour of Websphere.
-Instead, the container will do a touch on anyWAR/EAR in this folder once the auto-deploy service is watching the folder.
+Basically, the container will do a touch on any WAR/EAR in this folder once the auto-deploy service is watching the folder.
