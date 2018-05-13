@@ -96,7 +96,7 @@ services:
 ----
 
 We are using the health-check feature here. If you run `docker ps` the column `STATUS` will tell you the health of the container based on executing this command.
-The ping service should only show up ad healthy after ~ 30 + 10 * 5 seconds. This is because it will only start the health-checks after 30 seconds. And then the first 10 requests will return response-code 500. After this, it will flip to status-code 200 and return UP.
+The ping service should only show up as healthy after ~ 30 + 10 * 5 seconds. This is because it will only start the health-checks after 30 seconds. And then the first 10 requests will return response-code 500. After this, it will flip to status-code 200 and return UP.
 
 If the Gradle-plugin makes sure to only run the tests once the health of the container is Ok, the `PingST` should pass successfully.
 
