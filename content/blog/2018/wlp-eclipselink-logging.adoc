@@ -1,0 +1,30 @@
+= Websphere Liberty EclipseLink Logging
+.
+2018-05-14
+:jbake-type: post
+:jbake-tags: wlp eclipselink
+:jbake-status: published
+
+Websphere Liberty uses EclipseLink as the default JPA-implementation. How to log the SQL-commands from EclipseLink in the Websphere Liberty stdout/console?
+
+First step is enabling the logging in the `persistence.xml`:
+
+[source, xml]
+----
+<properties>
+    <property name="eclipselink.logging.level.sql" value="FINE" />
+    <property name="eclipselink.logging.level" value="FINE" />
+    <property name="eclipselink.logging.level.cache" value="FINE" />
+</properties>
+----
+
+This is not sufficient to get any output on stdout. 
+
+Additionally, the the following snippet needs to be added to the `server.xml`:
+
+[source, xml]
+----
+<logging traceSpecification="*=info:eclipselink.sql=all" traceFileName="stdout" traceFormat="BASIC"/>
+----
+
+Set `traceFileName="trace.log"` to get the statements printed to the `trace.log` instead.
