@@ -20,7 +20,7 @@ First step is enabling the logging in the `persistence.xml`:
 
 This is not sufficient to get any output on stdout. 
 
-Additionally, the the following snippet needs to be added to the `server.xml`:
+Additionally, the following snippet needs to be added to the `server.xml`:
 
 [source, xml]
 ----
