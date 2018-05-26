@@ -12,7 +12,7 @@ I had two requirements that I wanted to verify in specific:
 
 * Usually, when the containers are started from docker-perspecive, it does not mean that also the deployed application is fully up and running. Either you have to write some custom code that monitors the application-log for some marker; or, we can leverage the Docker health-check. Does the Docker Compose Gradle-plugin provide any integration for this so we only run the system-tests once the application is up?
 
-* System-test will be running on the Jenkins server. Ideally, a lot of tests are running in parallel. For this, it is necessary to use dynamic ports. Otherwise, there could conflicts for the exposed HTTP ports used by the different system-tests. The system-tests somehow needs to be aware of these dynamic ports. Does the Gradle-plugin help us with this?
+* System-test will be running on the Jenkins server. Ideally, a lot of tests are running in parallel. For this, it is necessary to use dynamic ports. Otherwise, there could be conflicts for the exposed HTTP ports of the different system-tests. Each system-test somehow needs to be aware of its dynamic ports. Does the Gradle-plugin help us with this?
 
 Indeed, the Gradle-plugin helps us with these two requirements.
 
