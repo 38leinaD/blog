@@ -55,9 +55,6 @@ public class PingST {
 
     @Test
     public void testMe() {
-        System.getenv().entrySet().forEach(e -> {
-            System.out.println("+ " + e.getKey() + ": " + e.getValue());
-        });
         Response response = ClientBuilder.newClient()
             .target("http://localhost:"+ System.getenv("PING_TCP_9080") +"/ping")
             .path("resources/ping")

@@ -3,7 +3,7 @@
 	<#include "menu.ftl">
 
 	<div class="page-header">
-		<h1>notes of a java developer</h1>
+		<h1>Blog</h1>
 	</div>
 	<#list posts as post>
   		<#if (post.status == "published")>
