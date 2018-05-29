@@ -1,0 +1,193 @@
+= Deploying a Java EE 7 Application to Google Cloud
+.
+2018-05-29
+:jbake-type: post
+:jbake-tags: kubernetes
+:jbake-status: draft
+
+In this post I am describing how to deploy a dockerized Java EE 7 application to the Google Cloud Platform (GCP) with Kubernetes.
+
+My previous experience is only with AWS; in specific with EC2 and ECS.
+So, this is not only my first exposure to the Google Cloud but also my first steps with Kubernetes.
+
+== The Application
+
+The application I would like to deploy is a simple Java EE 7 application exposing in a simple HTTP/Rest endpoint.
+The sources are located on link:https://github.com/38leinaD/kubernetes-playground[GitHub] and the docker-image can be found on link:https://hub.docker.com/r/dplatz/hello/[Docker Hub].
+If you have Docker installed, you can easily run it locally via
+----
+docker run --rm --name hello -p 80:8080 dplatz/hello
+----
+
+Now, in your browser or via cURL, go to http://localhost/hello/resources/health. You should get `UP` as the response. A simple health-check endpoint. See link:https://github.com/38leinaD/kubernetes-playground/blob/master/hello/src/main/java/de/dplatz/hello/business/boundary/HealthCheckResource.java[here] for the sources.
+
+Let's deploy it on the Google Cloud.
+
+== Installation and Setup
+
+Obviously, you will have to register on link:https://cloud.google.com/ for a free trial account first.
+It is valid for one year and also comes with a credit where I am not yet sure what/when resources will cost credit; all I do in this post did not touch my credit at all.
+
+Once you have singed up, you can do all of the confiuguration and management of your apps from the Google Cloud web-console. They even have an integrated terminal running in the browser.
+So, strictly it is not required to install any tooling on your local system if you are happy with this.
+
+The only thing we will do from the web-console is the creation of a Kubernetes Cluster (You can also do this via `gcloud` from the commandline).
+For this you go to "Kubernetes Engine / Kubernetes clusters" and "Create Cluster".
+You can leave all the defaults, just make sure to remember the name of the cluster and the zone it is deployed to.
+We will need this later to correctly set up the `kubectl` commandline locally.
+Note that it will also ask you to set up a project before creating the cluster. This allows grouping of resources in GCP based on different projects which is quiet useful.
+
+Setting up the cluster is heavy lifting and thus can take some minutes. In the meantime, we can already install the tools.
+
+. Install SDK / CLI (Centos): https://cloud.google.com/sdk/docs/quickstart-redhat-centos.
++
+I had to make sure to be logged *out* of my Google-account before running `gcloud init`.
+Without doing this, I received a 500 http-response.
++
+Also, when running `gcloud init` it will ask your for a default zone. Choose the one you used when setting up the cluster. Mine is `europe-west1-b`.
+
+. Install the `kubectl` command:
++
+----
+gcloud components install kubectl
+----
++ Note that you can also install `kubectl` independently. E.g. i already had it installed from link:https://kubernetes.io/docs/tasks/tools/install-kubectl/[here] while using minikube.
+
+. Now, you will need the name of the cluster you have created via the web-console. Configure the `gcloud` CLI-tool for your cluster:
++
+----
+gcloud container clusters get-credentials <cluster-name> --zone <zone-name> --project <project-name>
+---- 
++
+You can easily get the full command with correct parameters when opening the cluster in the web-console and clicking the "Connect" button for the web-based CLI.
+
+Run `kubectl get pods` just to see if the command works. You should see `No resources found.`.
+At this point, we have configured our CLI/`kubectl` to interact with our kubernetes cluster.
+
+== Namespaces
+
+The next thing we will do is optional but makes life easier once you have multiple applications deployed on your cluster.
+You can create a namespace/context per application your are deploying to GCP.
+This allows you to always only see the resources of the namespace you are currently working with. It also allows you to delete the namespace and it will do a cascading delete of all the resources.
+So, this is very nice for experimentation and not leaving a big mess of resources.
+
+----
+kubectl create namespace hello-namespace
+kubectl get namespaces
+----
+
+We create a namespace for our application and check if it actually was created.
+
+You can now attach this namespace to a context. A context is not a resource on GCP but is a configuration in your local `<user-home>/.kube/config`.
+
+----
+kubectl config set-context hello-context --namespace=hello-namespace \
+  --cluster=<cluster-name> \
+  --user=<user-name>
+----
+
+What is `<cluster-name>` and `<user-name>` that you have to put in?. Easiest, is to get it from running
+----
+kubectl config view
+----
+
+Now we activate this context. All operations now will be done within the assigned namespace.
+
+----
+kubectl config use-context hello-context
+----
+
+You can also double-check here the activated context:
+----
+kubectl config current-context
+----
+
+You can also run the `kubectl config view` command again or check in `<user-home>/.kube/config`. As said, the current-context can be found here and is a local setting.
+
+You can read more on namespaces link:https://kubernetes.io/docs/tasks/administer-cluster/namespaces-walkthrough/[here].
+
+== Deploying the Application
+
+Deploying the application in Kubernetes requires three primitives to be created:
+
+* Deployment/Pods: These are the actually docker-containers that are running. A pod actually could consist of multiple containers. Think of e.g. side-car containers in a microservice architecture.
+* Service: The containers/Pods are hidden behind a service. Think of the Service as e.g. a load-balancer: You never interact with the individual containers directly; the load-balancer is the single service you as a client call.
+* Ingress: Our final goal is to access our application from the Internet. By default, this is not possible. You will have to set up an Ingress for Incoming Traffic. Basically, you will get an internet-facing IP-address that you can call.
+
+All these steps are quiet nicely explained when you read the offical doc on link:https://kubernetes.io/docs/tasks/run-application/run-stateless-application-deployment/[Setting up HTTP Load Balancing with Ingress].
+What you will find there, is that Deployment, Service and Ingress are set up via indivdual calls to `kubectl`. You could put all these calls into a shell-script to easily replay them, but there is something else in the Kubernets world.
+What we will be doing here instead, is define these resources in a YAML file.
+
+[source, yaml]
+----
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: hello-deployment
+spec:
+  selector:
+    matchLabels:
+      app: hello
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: hello
+    spec:
+      containers:
+      - name: hello
+        image: dplatz/hello:latest
+        ports:
+        - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hello-service
+spec:
+  type: NodePort
+  selector:
+    app: hello
+  ports:
+    - port: 8080
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: hello-ingress
+spec:
+  backend:
+    serviceName: hello-service
+    servicePort: 8080
+----
+
+We can now simply call `kubectl apply -f hello.yml`.
+
+Get the public IP by running
+----
+kubectl get ingress hello-ingress
+----
+
+You can now try to open `http://<ip>/hello/resources/health` in your browser of with cURL. You should get an "UP" response.
+Note that this can actually take some minutes before it will work. Congratulations, you succesfully deployed a dockerized application to the Google Cloud via Kubernetes.
+
+Once it worked, you can check the application-server log as well like this:
+
+----
+kubectl get pods
+kubectl logs -f <pod-name>
+----
+
+Note that the first command if to get the name of the Pod. The second command will give you a tail on the stdout of the container.
+
+A final not on why namespaces are useful: What you can do now to start over again and remove *all* the created resources in the cluster is invoke
+----
+kubectl delete namespace hello-namespace
+----
+
+Lastly, a cheat-sheet for some of the important `kubectl` commands can be found link:https://kubernetes.io/docs/reference/kubectl/cheatsheet/[here].
+Here, you will also find how to get auto-completion in your shell which is super-useful. As I am using zsh, I created an alias for it:
+
+----
+alias kubeinit="source <(kubectl completion zsh)"
+----
