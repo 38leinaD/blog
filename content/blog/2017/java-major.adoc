@@ -1,7 +1,7 @@
 title=Java Version Strings
 date=2017-01-16
 type=post
-tags=bash
+tags=java
 status=published
 ~~~~~~
 

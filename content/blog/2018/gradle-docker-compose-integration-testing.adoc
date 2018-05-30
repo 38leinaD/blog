@@ -2,7 +2,7 @@
 .
 2018-05-06
 :jbake-type: post
-:jbake-tags: gradle javaee docker-compose
+:jbake-tags: gradle, javaee, docker
 :jbake-status: published
 
 Recently, I read link:http://bmuschko.com/blog/gradle-docker-compose/[this] article on a nice Gradle-plugin that allows to use Docker Compose from Gradle.

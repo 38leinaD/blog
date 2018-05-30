@@ -2,7 +2,7 @@
 .
 2017-05-01
 :jbake-type: post
-:jbake-tags: commandline
+:jbake-tags: cli
 :jbake-status: published
 
 Read link:https://blog.packagecloud.io/eng/2017/03/14/using-strace-to-understand-java-performance-improvement/[].

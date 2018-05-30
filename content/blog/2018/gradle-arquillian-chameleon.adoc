@@ -2,7 +2,7 @@
 .
 2018-02-26
 :jbake-type: post
-:jbake-tags: gradle wlp javaee arquillian wildfly
+:jbake-tags: gradle, wlp, javaee, arquillian, wildfly
 :jbake-status: published
 
 The lastest Gradle 4.6 release candiates come with link:https://docs.gradle.org/4.6-rc-2/release-notes.html?_ga=2.148670132.268890152.1519674243-774667617.1508666884#bom-import[BOM-import support].

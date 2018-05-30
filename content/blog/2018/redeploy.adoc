@@ -2,7 +2,7 @@
 .
 2018-02-25
 :jbake-type: post
-:jbake-tags: gradle wlp javaee8 java9 vscode
+:jbake-tags: gradle, wlp, javaee8, java9, vscode
 :jbake-status: published
 
 The last weeks I have started to experiment how well VSCode can be used for Java EE development.

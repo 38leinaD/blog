@@ -1,7 +1,7 @@
 title=SSH Keys
 date=2017-01-13
 type=post
-tags=bash
+tags=cli
 status=published
 ~~~~~~
 

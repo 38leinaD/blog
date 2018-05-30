@@ -2,7 +2,7 @@
 .
 2017-01-10
 :jbake-type: post
-:jbake-tags: commandline
+:jbake-tags: cli
 :jbake-status: published
 
 A very simple http-server:

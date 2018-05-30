@@ -2,7 +2,7 @@
 .
 2018-04-10
 :jbake-type: post
-:jbake-tags: websphere docker
+:jbake-tags: websphere, docker
 :jbake-status: published
 
 The software I work with on my job is portable accross different application-servers; including Websphere Trational, Websphere Liberty and JBoss.

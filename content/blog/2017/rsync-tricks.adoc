@@ -1,7 +1,7 @@
 title=rsync tricks
 date=2017-01-20
 type=post
-tags=bash
+tags=cli
 status=published
 ~~~~~~
 

@@ -2,7 +2,7 @@
 .
 2018-04-11
 :jbake-type: post
-:jbake-tags: microprofile liberty
+:jbake-tags: microprofile, liberty
 :jbake-status: published
 
 These are my personal notes on getting familiar with link:https://github.com/eclipse/microprofile-bom/releases/download/1.3/microprofile-spec-1.3.pdf[MicroProfile 1.3]. In specific Metrics 1.1.

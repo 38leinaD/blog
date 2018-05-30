@@ -2,7 +2,7 @@
 .
 2018-03-12
 :jbake-type: post
-:jbake-tags: gradle wlp arquillian
+:jbake-tags: gradle, wlp, arquillian
 :jbake-status: published
 
 In this post I describe how to use arquillian together with the container-adapter for Websphere-/Open-Liberty.

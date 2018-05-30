@@ -2,7 +2,7 @@
 .
 2018-04-07
 :jbake-type: post
-:jbake-tags: gradle javaee arquillian wildfly
+:jbake-tags: gradle, javaee, arquillian, wildfly
 :jbake-status: published
 
 In a previous post I have already described how to use Arquillian Chameleon to simplify the Arquillian config.

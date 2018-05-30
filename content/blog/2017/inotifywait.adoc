@@ -2,7 +2,7 @@
 .
 2017-03-07
 :jbake-type: post
-:jbake-tags: commandline
+:jbake-tags: cli
 :jbake-status: published
 
 Monitor filesystem-changes:

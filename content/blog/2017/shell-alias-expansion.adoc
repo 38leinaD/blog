@@ -1,7 +1,7 @@
 title=Shell Alias-Expansion
 date=2017-01-17
 type=post
-tags=bash
+tags=cli
 status=published
 ~~~~~~
 

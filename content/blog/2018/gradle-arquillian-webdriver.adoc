@@ -2,7 +2,7 @@
 .
 2018-02-24
 :jbake-type: post
-:jbake-tags: arquillian gradle
+:jbake-tags: arquillian, gradle
 :jbake-status: published
 
 Lets for this post assume we want to test some Web UI that is already running somehow. I.e. we don't want to start up the container with the web-app from arquillian.

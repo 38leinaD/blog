@@ -2,7 +2,7 @@
 .
 2018-03-13
 :jbake-type: post
-:jbake-tags: wlp javaee derby
+:jbake-tags: wlp, javaee, derby
 :jbake-status: published
 
 In this post I describe how to use Open Liberty with the lightweight Apache Derby database.

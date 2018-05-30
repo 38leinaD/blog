@@ -2,7 +2,7 @@
 .
 2018-05-29
 :jbake-type: post
-:jbake-tags: kubernetes
+:jbake-tags: gcp, kubernetes
 :jbake-status: draft
 
 In this post I am describing how to deploy a dockerized Java EE 7 application to the Google Cloud Platform (GCP) with Kubernetes.
@@ -25,7 +25,7 @@ Let's deploy it on the Google Cloud.
 
 == Installation and Setup
 
-Obviously, you will have to register on link:https://cloud.google.com/ for a free trial account first.
+Obviously, you will have to register on https://cloud.google.com/ for a free trial-account first.
 It is valid for one year and also comes with a credit where I am not yet sure what/when resources will cost credit; all I do in this post did not touch my credit at all.
 
 Once you have singed up, you can do all of the confiuguration and management of your apps from the Google Cloud web-console. They even have an integrated terminal running in the browser.

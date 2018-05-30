@@ -2,7 +2,7 @@
 .
 2017-10-31
 :jbake-type: post
-:jbake-tags: rest, security. javaee
+:jbake-tags: security, javaee
 :jbake-status: published
 
 Basic-auth is the simplest and weakest protection you can add to your resources in a Java EE application. This post shows how to leverage it for JAX-RS-resources that are accessed by a plain HTML5/JavaScript app.

@@ -2,7 +2,7 @@
 .
 2018-05-14
 :jbake-type: post
-:jbake-tags: wlp eclipselink
+:jbake-tags: wlp, eclipselink
 :jbake-status: published
 
 Websphere Liberty uses EclipseLink as the default JPA-implementation. How to log the SQL-commands from EclipseLink in the Websphere Liberty stdout/console?

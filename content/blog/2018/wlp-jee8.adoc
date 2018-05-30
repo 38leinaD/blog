@@ -2,7 +2,7 @@
 .
 2018-01-22
 :jbake-type: post
-:jbake-tags: wlp javaee
+:jbake-tags: wlp, javaee
 :jbake-status: published
 
 I am working of the latest Development Builds of Open Liberty supporting Java EE 8. You can download them link:https://openliberty.io/downloads/[here] under "Development builds".

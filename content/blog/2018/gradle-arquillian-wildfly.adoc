@@ -2,7 +2,7 @@
 .
 2018-02-28
 :jbake-type: post
-:jbake-tags: gradle wildfly arquillian
+:jbake-tags: gradle, wildfly, arquillian
 :jbake-status: published
 
 In this post I describe how to set up arquillian to test/deploy on Wildfly.
