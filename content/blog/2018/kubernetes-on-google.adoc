@@ -1,9 +1,9 @@
-= Deploying a Java EE 7 Application to Google Cloud
+= Deploying a Java EE 7 Application with Kubernetes to the Google Cloud
 .
-2018-05-29
+2018-05-30
 :jbake-type: post
 :jbake-tags: gcp, kubernetes
-:jbake-status: draft
+:jbake-status: published
 
 In this post I am describing how to deploy a dockerized Java EE 7 application to the Google Cloud Platform (GCP) with Kubernetes.
 
@@ -12,23 +12,23 @@ So, this is not only my first exposure to the Google Cloud but also my first ste
 
 == The Application
 
-The application I would like to deploy is a simple Java EE 7 application exposing in a simple HTTP/Rest endpoint.
-The sources are located on link:https://github.com/38leinaD/kubernetes-playground[GitHub] and the docker-image can be found on link:https://hub.docker.com/r/dplatz/hello/[Docker Hub].
+The application I would like to deploy is a simple Java EE 7 application exposing a basic HTTP/Rest endpoint.
+The sources are located on link:https://github.com/38leinaD/kubernetes-playground[GitHub] and the Docker image can be found on link:https://hub.docker.com/r/38leinad/hello/[Docker Hub].
 If you have Docker installed, you can easily run it locally via
 ----
-docker run --rm --name hello -p 80:8080 dplatz/hello
+docker run --rm --name hello -p 80:8080 38leinad/hello
 ----
 
 Now, in your browser or via cURL, go to http://localhost/hello/resources/health. You should get `UP` as the response. A simple health-check endpoint. See link:https://github.com/38leinaD/kubernetes-playground/blob/master/hello/src/main/java/de/dplatz/hello/business/boundary/HealthCheckResource.java[here] for the sources.
 
-Let's deploy it on the Google Cloud.
+Let's deploy it on the Google Cloud now.
 
 == Installation and Setup
 
 Obviously, you will have to register on https://cloud.google.com/ for a free trial-account first.
-It is valid for one year and also comes with a credit where I am not yet sure what/when resources will cost credit; all I do in this post did not touch my credit at all.
+It is valid for one year and also comes with a credit of $300. I am not sure yet what/when resources will cost credit. After four days of tinkering, $1 is gone.
 
-Once you have singed up, you can do all of the confiuguration and management of your apps from the Google Cloud web-console. They even have an integrated terminal running in the browser.
+Once you have singed up, you can do all of the configuration and management of your apps from the Google Cloud web-console. They even have an integrated terminal running in the browser.
 So, strictly it is not required to install any tooling on your local system if you are happy with this.
 
 The only thing we will do from the web-console is the creation of a Kubernetes Cluster (You can also do this via `gcloud` from the commandline).
@@ -51,7 +51,8 @@ Also, when running `gcloud init` it will ask your for a default zone. Choose the
 ----
 gcloud components install kubectl
 ----
-+ Note that you can also install `kubectl` independently. E.g. i already had it installed from link:https://kubernetes.io/docs/tasks/tools/install-kubectl/[here] while using minikube.
++
+Note that you can also install `kubectl` independently. E.g. I already had it installed from link:https://kubernetes.io/docs/tasks/tools/install-kubectl/[here] while using minikube.
 
 . Now, you will need the name of the cluster you have created via the web-console. Configure the `gcloud` CLI-tool for your cluster:
 +
@@ -86,23 +87,23 @@ kubectl config set-context hello-context --namespace=hello-namespace \
   --user=<user-name>
 ----
 
-What is `<cluster-name>` and `<user-name>` that you have to put in?. Easiest, is to get it from running
+What is `<cluster-name>` and `<user-name>` that you have to put in? Easiest, is to get it from running
 ----
 kubectl config view
 ----
 
-Now we activate this context. All operations now will be done within the assigned namespace.
+Let's activate this context. All operations will be done within the assigned namespace from now on.
 
 ----
 kubectl config use-context hello-context
 ----
 
-You can also double-check here the activated context:
+You can also double-check the activated context:
 ----
 kubectl config current-context
 ----
 
-You can also run the `kubectl config view` command again or check in `<user-home>/.kube/config`. As said, the current-context can be found here and is a local setting.
+Run the `kubectl config view` command again or even check in `<user-home>/.kube/config`. As said before, the current-context can be found here and is just a local setting.
 
 You can read more on namespaces link:https://kubernetes.io/docs/tasks/administer-cluster/namespaces-walkthrough/[here].
 
@@ -136,7 +137,7 @@ spec:
     spec:
       containers:
       - name: hello
-        image: dplatz/hello:latest
+        image: 38leinad/hello:latest
         ports:
         - containerPort: 8080
 ---
@@ -168,7 +169,7 @@ Get the public IP by running
 kubectl get ingress hello-ingress
 ----
 
-You can now try to open link:http://<ip>/hello/resources/health[http://<ip>/hello/resources/health] in your browser of with cURL. You should get an "UP" response.
+You can now try to open link:http://<ip>/hello/resources/health[http://<ip>/hello/resources/health] in your browser or with cURL. You should get an "UP" response.
 Note that this can actually take some minutes before it will work. Congratulations, you succesfully deployed a dockerized application to the Google Cloud via Kubernetes.
 
 Once it worked, you can check the application-server log as well like this:
@@ -178,7 +179,7 @@ kubectl get pods
 kubectl logs -f <pod-name>
 ----
 
-Note that the first command if to get the name of the Pod. The second command will give you a tail on the stdout of the container.
+Note that the first command is to get the name of the Pod. The second command will give you the log-output of the container; you might know this from plain Docker already.
 
 A final not on why namespaces are useful: What you can do now to start over again and remove *all* the created resources in the cluster is invoke
 ----
