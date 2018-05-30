@@ -170,7 +170,7 @@ kubectl get ingress hello-ingress
 ----
 
 You can now try to open link:http://<ip>/hello/resources/health[http://<ip>/hello/resources/health] in your browser or with cURL. You should get an "UP" response.
-Note that this can actually take some minutes before it will work. Congratulations, you succesfully deployed a dockerized application to the Google Cloud via Kubernetes.
+Note that this can actually take some minutes before it will work.
 
 Once it worked, you can check the application-server log as well like this:
 
@@ -181,10 +181,13 @@ kubectl logs -f <pod-name>
 
 Note that the first command is to get the name of the Pod. The second command will give you the log-output of the container; you might know this from plain Docker already.
 
-A final not on why namespaces are useful: What you can do now to start over again and remove *all* the created resources in the cluster is invoke
+We succesfully deployed a dockerized application to the Google Cloud via Kubernetes.
+
+A final not on why namespaces are useful: What you can do now to start over again is invoke
 ----
 kubectl delete namespace hello-namespace
 ----
+and *all* the resources in the cluster are gone.
 
 Lastly, a cheat-sheet for some of the important `kubectl` commands can be found link:https://kubernetes.io/docs/reference/kubectl/cheatsheet/[here].
 Here, you will also find how to get auto-completion in your shell which is super-useful. As I am using zsh, I created an alias for it:
