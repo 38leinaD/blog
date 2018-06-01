@@ -1,0 +1,158 @@
+= Websphere Liberty, EclipseLink and Caching in the Cluster
+.
+2018-06-01
+:jbake-type: post
+:jbake-tags: wlp, eclipselink
+:jbake-status: draft
+
+== Cache Coordination
+
+When using JPA, sooner or later the question of caching will arise to improve performance.
+Especially for data that is frequently read but only written/updated infrequently, it makes sense to enable the second-level cache via `shared-cache-mode`-element in the `persistence.xml`.
+See the link:https://docs.oracle.com/javaee/7/tutorial/persistence-cache001.htm#GKJIO[Java EE 7 tutorial] for details.
+
+By default, EclipseLink has the second-level cache enabled as you can read link:https://wiki.eclipse.org/EclipseLink/FAQ/How_to_disable_the_shared_cache%3F[here].
+Consider what will happen in a clustered environment: What happens if *server one* has the entity cached and *server two* will update the entity?
+*server one* will have a stale cache-entry and by default noone will tell the server that its cache is out-of-date.
+The simplest solution is to define a hard-coded expire or not use the second-level-cache at all.
+
+A solution to get second-level cache's sychronized in the cluster is via EclipseLink's vendor-specific feature called cache-coordination.
+You can read more about it link:https://wiki.eclipse.org/EclipseLink/Examples/JPA/CacheCoordination[here], but in a nutshell you can use either JMS, RMI or JGroups to distribute cache-invalidations/updated within the cluster.
+This post focuses on getting EclipseLink's cache-coordination working under Websphere Liberty via JGroups.
+
+== Application Configuration
+
+From the application's perspective, you only have to enable this feature in the `persistence.xml` via
+
+----
+<property name="eclipselink.cache.coordination.protocol" value="jgroups" />
+----
+
+== Liberty Server Configuration
+
+Deploying this application on Webspher Liberty, will lead to the following error:
+
+----
+Exception Description: ClassNotFound: [org.eclipse.persistence.sessions.coordination.jgroups.JGroupsTransportManager] specified in [eclipselink.cache.coordination.protocol] property.
+----
+
+Thanks to the great help on the openliberty.io mailing-list, I was able to solve the problem. You can read the full discussion link:https://groups.io/g/openliberty/topic/eclipselink_cache_coherence/20719688?p=,,,20,0,0,0::recentpostdate%2Fsticky,,,20,2,0,20719688[here].
+
+The short summary is that the cache-coherence feature of EclipseLink is an extension and Liberty does not ship this extension by default.
+The prefered solution is replace the JPA-implementation with our own. For us, this will simply be EclipseLink but including the extension.
+In Liberty this is possible via the `jpaContainer` feature in the `server.xml`. The link:https://www.ibm.com/support/knowledgecenter/en/SSEQTP_liberty/com.ibm.websphere.wlp.doc/ae/twlp_dep_jpa.html[offical documentation] describes how to use our own JPA-implementation.
+As there are still a few small mistakes you can make on the way, let me describe the configuration that works here in detail:
+
+. Assuming you are working with the `javaee-7.0`-feature in the `server.xml` (or in specific `jpa-2.1`), you will have to get EclipseLink 2.6 as this implements JPA 2.1. For `javaee-8.0` (or in specific `jpa-2.2`) it would be EclipseLink 2.7.
++
+I assume `javaee-7.0` here; that's why I downloaded link:http://www.eclipse.org/eclipselink/downloads/index.php#26[EclipseLink 2.6.5 Installer Zip].
+
+. Create a folder `lib/global` within your Liberty server-config-folder. E.g. `defaultServer/lib/global` and copy the following from the zip: 
+** `eclipselink.jar`
+** `org.eclipse.persistence.extension_2.6.5.v20170607-b3d05bd.jar`
+
+. If you would use it like this, you will find a ClassNotFoundException later for the actual JGroups implementation-classes. You will need to get it seperately from link:https://sourceforge.net/projects/javagroups/files/JGroups/3.2.8.Final/[here].
++
+If we look on the `2.6.5`-tag in link:https://github.com/eclipse/eclipselink.runtime/blob/2.6.5/foundation/org.eclipse.persistence.extension/pom.xml[EclipseLink's Git Repo], we see that we should use `org.jgroups:jgroups:3.2.8.Final`.
++
+Download it and copy the `jgroups-3.2.8.Final.jar` to the `lib/global` folder as well.
+
+. The last step is to set up your `server.xml` like this:
++
+----
+<?xml version="1.0" encoding="UTF-8"?>
+<server description="new server">
+
+    <!-- Enable features -->
+    <featureManager>
+		<feature>servlet-3.1</feature>
+		<feature>beanValidation-1.1</feature>
+		<feature>ssl-1.0</feature>
+		<feature>jndi-1.0</feature>
+		<feature>jca-1.7</feature>
+		<feature>jms-2.0</feature>
+		<feature>ejbPersistentTimer-3.2</feature>
+		<feature>appSecurity-2.0</feature>
+		<feature>j2eeManagement-1.1</feature>
+		<feature>jdbc-4.1</feature>
+		<feature>wasJmsServer-1.0</feature>
+		<feature>jaxrs-2.0</feature>
+		<feature>javaMail-1.5</feature>
+		<feature>cdi-1.2</feature>
+		<feature>jcaInboundSecurity-1.0</feature>
+		<feature>jsp-2.3</feature>
+		<feature>ejbLite-3.2</feature>
+		<feature>managedBeans-1.0</feature>
+		<feature>jsf-2.2</feature>
+		<feature>ejbHome-3.2</feature>
+		<feature>jaxws-2.2</feature>
+		<feature>jsonp-1.0</feature>
+		<feature>el-3.0</feature>
+		<feature>jaxrsClient-2.0</feature>
+		<feature>concurrent-1.0</feature>
+		<feature>appClientSupport-1.0</feature>
+		<feature>ejbRemote-3.2</feature>
+		<feature>jaxb-2.2</feature>
+		<feature>mdb-3.2</feature>
+		<feature>jacc-1.5</feature>
+		<feature>batch-1.0</feature>
+		<feature>ejb-3.2</feature>
+		<feature>json-1.0</feature>
+		<feature>jaspic-1.1</feature>
+		<feature>distributedMap-1.0</feature>
+		<feature>websocket-1.1</feature>
+		<feature>wasJmsSecurity-1.0</feature>
+		<feature>wasJmsClient-2.0</feature>
+
+		<feature>jpaContainer-2.1</feature>
+    </featureManager>
+
+
+    <basicRegistry id="basic" realm="BasicRealm"> 
+    </basicRegistry>
+    
+    <httpEndpoint id="defaultHttpEndpoint"
+                  httpPort="9080"
+                  httpsPort="9443" />
+                  
+    <applicationManager autoExpand="true"/>
+
+	<jpa defaultPersistenceProvider="org.eclipse.persistence.jpa.PersistenceProvider"/>
+
+</server>
+----
+
+Some comments on the `server.xml`:
+
+* Note that we have to list all of the features that are included in the `javaee-7.0` feature minus the `jpa-2.1` fature explicitly now; because we don`t want the default JPA-provider.
+* Instead of `jpa-2.1` I added `jpaContainer-2.1` to bring our own JPA-provider.
+* The `defaultPersistenceProvider` will set the JPA-provider to use ours and is required by the `jpaContainer` feature.
+
+== Liberty Configuration without Global Library
+
+Please be aware that there are different ways how to include our EclipseLink library. Above, i chose the way that requires the list configuration in the `server.xml` and also works for dropin-applications. The way I did it was via a link:https://www.ibm.com/support/knowledgecenter/SSD28V_9.0.0/com.ibm.websphere.wlp.core.doc/ae/cwlp_sharedlibrary.html[global library].
+The alternative is to define an explicit library in the `server.xml` and reference it for each invidual application like this:
+
+[source, xml]
+----
+<bell libraryRef="eclipselink"/>
+<library id="eclipselink">
+    <file name="${server.config.dir}/lib/eclipselink.jar"/>
+    <file name="${server.config.dir}/lib/org.eclipse.persistence.extension_2.6.5.v20170607-b3d05bd.jar"/>
+    <file name="${server.config.dir}/lib/jgroups-3.2.8.Final.jar"/>
+</library>
+
+<application location="myapp.war">
+    <classloader commonLibraryRef="eclipselink"/>
+</application>
+----
+
+Also note, that the JARs are now in the `lib`-folder and not under `lib/global`. Additionally, make sure to add `<feature>bells-1.0</feature>`.
+
+== Conclusion
+
+With the above steps I was able to enable EclipseLink's cache-coordination feature on Websphere Liberty for Java EE 7.
+I did not try it, but I would assume that it will work similar for Java EE 8 on the latest OpenLiberty builds.
+For sure it is nice that plugging in your own JPA-provider is so easy in Liberty; but I don't like that I have to do this to get a feature of EclipseLink working under Liberty which I would expect to work out of the box.
+EclipseLink's cache-coordination feature is a quiet useful extension and it leave me uncomfortable that I have configured my own snowflake Liberty instead of relying on the standard package.
+On the other hand, it works; and if I make sure to use the exact same version of EclipseLink as packaged with Liberty out of the box, I would hope the differences are minimal. 
