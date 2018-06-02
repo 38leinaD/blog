@@ -29,7 +29,7 @@ From the application's perspective, you only have to enable this feature in the 
 <property name="eclipselink.cache.coordination.protocol" value="jgroups" />
 ----
 
-== Liberty Server Configuration
+== Liberty Server Configuration with Global Library
 
 Deploying this application on Webspher Liberty, will lead to the following error:
 
@@ -51,11 +51,16 @@ As there are still a few small mistakes you can make on the way, let me describe
 
 . Assuming you are working with the `javaee-7.0`-feature in the `server.xml` (or in specific `jpa-2.1`), you will have to get EclipseLink 2.6 as this implements JPA 2.1. For `javaee-8.0` (or in specific `jpa-2.2`) it would be EclipseLink 2.7.
 +
-I assume `javaee-7.0` here; that's why I downloaded link:http://www.eclipse.org/eclipselink/downloads/index.php#26[EclipseLink 2.6.5 Installer Zip].
+I assume `javaee-7.0` here; that's why I downloaded link:http://www.eclipse.org/downloads/download.php?file=/rt/eclipselink/releases/2.6.5/eclipselink-plugins-2.6.5.v20170607-b3d05bd.zip[EclipseLink 2.6.5 OSGi Bundles Zip].
 
-. Create a folder `lib/global` within your Liberty server-config-folder. E.g. `defaultServer/lib/global` and copy the following from the zip: 
-** `eclipselink.jar`
-** `org.eclipse.persistence.extension_2.6.5.v20170607-b3d05bd.jar`
+. Create a folder `lib/global` within your Liberty server-config-folder. E.g. `defaultServer/lib/global` and copy the following from the zip (same as referenced link:https://www.ibm.com/support/knowledgecenter/en/SSEQTP_liberty/com.ibm.websphere.wlp.doc/ae/twlp_dep_jpa.html[here] plus the extension): 
+** `org.eclipse.persistence.asm.jar`
+** `org.eclipse.persistence.core.jar`
+** `org.eclipse.persistence.jpa.jar`
+** `org.eclipse.persistence.antlr.jar`
+** `org.eclipse.persistence.jpa.jpql.jar`
+** `org.eclipse.persistence.jpa.modelgen.jar`
+** `org.eclipse.persistence.extension.jar`
 
 . If you would use it like this, you will find a ClassNotFoundException later for the actual JGroups implementation-classes. You will need to get it seperately from link:https://sourceforge.net/projects/javagroups/files/JGroups/3.2.8.Final/[here].
 +
@@ -137,16 +142,22 @@ Some comments on the `server.xml`:
 
 == Liberty Configuration without Global Library
 
-Please be aware that there are different ways how to include our EclipseLink library. Above, i chose the way that requires the list configuration in the `server.xml` and also works for dropin-applications. The way I did it was via a link:https://www.ibm.com/support/knowledgecenter/SSD28V_9.0.0/com.ibm.websphere.wlp.core.doc/ae/cwlp_sharedlibrary.html[global library].
-The alternative is to define an explicit library in the `server.xml` and reference it for each invidual application like this:
+Please be aware that there are different ways how to include our EclipseLink library. Above, I chose the way that requires the list configuration in the `server.xml` and also works for dropin-applications. The way I did it was via a link:https://www.ibm.com/support/knowledgecenter/SSD28V_9.0.0/com.ibm.websphere.wlp.core.doc/ae/cwlp_sharedlibrary.html[global library].
+The link:https://www.ibm.com/support/knowledgecenter/en/SSEQTP_liberty/com.ibm.websphere.wlp.doc/ae/twlp_dep_jpa.html[offical documentation] defines it as an explicit library in the `server.xml` and reference it for each invidual application like this:
 
 [source, xml]
 ----
 <bell libraryRef="eclipselink"/>
 <library id="eclipselink">
-    <file name="${server.config.dir}/lib/eclipselink.jar"/>
-    <file name="${server.config.dir}/lib/org.eclipse.persistence.extension_2.6.5.v20170607-b3d05bd.jar"/>
-    <file name="${server.config.dir}/lib/jgroups-3.2.8.Final.jar"/>
+	<file name="${server.config.dir}/jpa/org.eclipse.persistence.asm.jar"/>
+	<file name="${server.config.dir}/jpa/org.eclipse.persistence.core.jar"/>
+	<file name="${server.config.dir}/jpa/org.eclipse.persistence.jpa.jar"/>
+	<file name="${server.config.dir}/jpa/org.eclipse.persistence.antlr.jar"/>
+	<file name="${server.config.dir}/jpa/org.eclipse.persistence.jpa.jpql.jar"/>
+	<file name="${server.config.dir}/jpa/org.eclipse.persistence.jpa.modelgen.jar"/>
+	
+	<file name="${server.config.dir}/jpa/org.eclipse.persistence.extension.jar"/>
+	<file name="${server.config.dir}/jpa/jgroups.jar"/>
 </library>
 
 <application location="myapp.war">
@@ -154,12 +165,17 @@ The alternative is to define an explicit library in the `server.xml` and referen
 </application>
 ----
 
-Also note, that the JARs are now in the `lib`-folder and not under `lib/global`. Additionally, make sure to add `<feature>bells-1.0</feature>`.
+Also note, that the JARs are now in the `defaultServer/jpa`-folder,  not under `defaultServer/lib/global` and I removed all the version-suffixes from the file-names.
+Additionally, make sure to add `<feature>bells-1.0</feature>`.
 
 == Conclusion
 
-With the above steps I was able to enable EclipseLink's cache-coordination feature on Websphere Liberty for Java EE 7.
+With the either of the aboved approaches I was able to enable EclipseLink's cache-coordination feature on Websphere Liberty for Java EE 7.
 I did not try it, but I would assume that it will work similar for Java EE 8 on the latest OpenLiberty builds.
 For sure it is nice that plugging in your own JPA-provider is so easy in Liberty; but I don't like that I have to do this to get a feature of EclipseLink working under Liberty which I would expect to work out of the box.
 EclipseLink's cache-coordination feature is a quiet useful extension and it leave me uncomfortable that I have configured my own snowflake Liberty instead of relying on the standard package.
-On the other hand, it works; and if I make sure to use the exact same version of EclipseLink as packaged with Liberty out of the box, I would hope the differences are minimal. 
+On the other hand, it works; and if I make sure to use the exact same version of EclipseLink as packaged with Liberty out of the box, I would hope the differences are minimal.
+
+The approach i chose/prefer in the end is <<Liberty Server Configuration with Global Library>> instead of using the approach that is also in the offical documentation (<<Liberty Configuration without Global Library>>).
+The reason is that for <<Liberty Configuration without Global Library>> I have to reference the library in the `server.xml` indvidually for each application.
+This will not work for applications I would like throw into the `dropins`.
