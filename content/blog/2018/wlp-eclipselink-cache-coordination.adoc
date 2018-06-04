@@ -17,7 +17,7 @@ Consider what will happen in a clustered environment: What happens if *server on
 How to deal with it? Define a hard-coded expiration? Or not use the second-level-cache at all?
 
 A better solution is to get the second-level caches sychronized in the cluster. EclipseLink's vendor-specific feature for this is called cache-coordination.
-You can read more about it link:https://wiki.eclipse.org/EclipseLink/Examples/JPA/CacheCoordination[here], but in a nutshell you can use either JMS, RMI or JGroups to distribute cache-invalidations/updated within the cluster.
+You can read more about it link:https://wiki.eclipse.org/EclipseLink/Examples/JPA/CacheCoordination[here], but in a nutshell you can use either JMS, RMI or JGroups to distribute cache-invalidations/updates within the cluster.
 This post focuses on getting EclipseLink's cache-coordination working under Websphere Liberty via JGroups.
 
 == Application Configuration
