@@ -1,9 +1,9 @@
 = Websphere Liberty, EclipseLink and Caching in the Cluster
 .
-2018-06-01
+2018-06-04
 :jbake-type: post
 :jbake-tags: wlp, eclipselink
-:jbake-status: draft
+:jbake-status: published
 
 == Cache Coordination
 
