@@ -136,7 +136,7 @@ Download it and copy the `jgroups-3.2.8.Final.jar` to the `lib/global` folder as
 
 Some comments on the `server.xml`:
 
-* Note that we have to list all of the features that are included in the `javaee-7.0` feature minus the `jpa-2.1` fature explicitly now; because we don`t want the default JPA-provider.
+* Note that we have to list all of the features that are included in the `javaee-7.0` feature minus the `jpa-2.1` feature explicitly now because we don`t want the default JPA-provider.
 * Instead of `jpa-2.1` I added `jpaContainer-2.1` to bring our own JPA-provider.
 * The `defaultPersistenceProvider` will set the JPA-provider to use ours and is required by the `jpaContainer` feature.
 
