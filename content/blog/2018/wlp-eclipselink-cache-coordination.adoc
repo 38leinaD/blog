@@ -168,6 +168,12 @@ The link:https://www.ibm.com/support/knowledgecenter/en/SSEQTP_liberty/com.ibm.w
 Also note, that the JARs are now in the `defaultServer/jpa`-folder,  not under `defaultServer/lib/global` and I removed all the version-suffixes from the file-names.
 Additionally, make sure to add `<feature>bells-1.0</feature>`.
 
+== Try it
+
+As this post is already getting to long, I will not got into detail here how to use this from your Java EE application. This will be for another post.
+But you can already get a working Java EE project to get your hands dirty from link:https://github.com/38leinaD/eclipselink-cache[my GitHub repository].
+Start the Docker Compose environment and use the contained `test.sh` to invoke some cURL requests against the application on two different cluster-nodes.
+
 == Conclusion
 
 With the either of the aboved approaches I was able to enable EclipseLink's cache-coordination feature on Websphere Liberty for Java EE 7.
