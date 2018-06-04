@@ -127,7 +127,7 @@ Download it and copy the `jgroups-3.2.8.Final.jar` to the `lib/global` folder as
                   httpPort="9080"
                   httpsPort="9443" />
                   
-    <applicationManager autoExpand="true"/>
+	<applicationManager autoExpand="true"/>
 
 	<jpa defaultPersistenceProvider="org.eclipse.persistence.jpa.PersistenceProvider"/>
 
@@ -142,7 +142,7 @@ Some comments on the `server.xml`:
 
 == Liberty Configuration without Global Library
 
-Please be aware that there are different ways how to include our EclipseLink library. Above, I chose the way that requires the list configuration in the `server.xml` and also works for dropin-applications. The way I did it was via a link:https://www.ibm.com/support/knowledgecenter/SSD28V_9.0.0/com.ibm.websphere.wlp.core.doc/ae/cwlp_sharedlibrary.html[global library].
+Be aware that there are different ways how to include our EclipseLink library. Above, I chose the way that requires the least configuration in the `server.xml` and also works for dropin-applications. The way I did it was via a link:https://www.ibm.com/support/knowledgecenter/SSD28V_9.0.0/com.ibm.websphere.wlp.core.doc/ae/cwlp_sharedlibrary.html[global library].
 The link:https://www.ibm.com/support/knowledgecenter/en/SSEQTP_liberty/com.ibm.websphere.wlp.doc/ae/twlp_dep_jpa.html[offical documentation] defines it as an explicit library in the `server.xml` and reference it for each invidual application like this:
 
 [source, xml]
@@ -165,7 +165,7 @@ The link:https://www.ibm.com/support/knowledgecenter/en/SSEQTP_liberty/com.ibm.w
 </application>
 ----
 
-Also note, that the JARs are now in the `defaultServer/jpa`-folder,  not under `defaultServer/lib/global` and I removed all the version-suffixes from the file-names.
+Also note, that the JARs are this time in the `defaultServer/jpa`-folder,  not under `defaultServer/lib/global` and I removed all the version-suffixes from the file-names.
 Additionally, make sure to add `<feature>bells-1.0</feature>`.
 
 == Try it
@@ -177,11 +177,13 @@ Start the Docker Compose environment and use the contained `test.sh` to invoke s
 == Conclusion
 
 With the either of the aboved approaches I was able to enable EclipseLink's cache-coordination feature on Websphere Liberty for Java EE 7.
+
 I did not try it, but I would assume that it will work similar for Java EE 8 on the latest OpenLiberty builds.
+
 For sure it is nice that plugging in your own JPA-provider is so easy in Liberty; but I don't like that I have to do this to get a feature of EclipseLink working under Liberty which I would expect to work out of the box.
-EclipseLink's cache-coordination feature is a quiet useful extension and it leave me uncomfortable that I have configured my own snowflake Liberty instead of relying on the standard package.
+EclipseLink's cache-coordination feature is a quiet useful extension and it leaves me uncomfortable that I have configured my own snowflake Liberty instead of relying on the standard package.
 On the other hand, it works; and if I make sure to use the exact same version of EclipseLink as packaged with Liberty out of the box, I would hope the differences are minimal.
 
-The approach i chose/prefer in the end is <<Liberty Server Configuration with Global Library>> instead of using the approach that is also in the offical documentation (<<Liberty Configuration without Global Library>>).
+The approach I chose/prefer in the end is <<Liberty Server Configuration with Global Library>> instead of using the approach that is also in the offical documentation (<<Liberty Configuration without Global Library>>).
 The reason is that for <<Liberty Configuration without Global Library>> I have to reference the library in the `server.xml` indvidually for each application.
 This will not work for applications I would like throw into the `dropins`.
