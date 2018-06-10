@@ -69,6 +69,7 @@ Now deploy and invoke `curl -X POST -H "Content-Type: text/plain" -d "42" http:/
 
 Now open http://localhost:9080/metrics in the browser. You should see the following prometheus-formatted metrics:
 
+[source]
 ----
 # TYPE application:hello_request_time_rate_per_second gauge
 application:hello_request_time_rate_per_second 0.1672874737158507
@@ -94,20 +95,17 @@ application:hello_request_time_seconds{quantile="0.75"} 2.005084111
 application:hello_request_time_seconds{quantile="0.95"} 2.005084111
 application:hello_request_time_seconds{quantile="0.98"} 2.005084111
 application:hello_request_time_seconds{quantile="0.99"} 2.005084111
-application:hello_request_time_seconds{quantile="0.999"} 2.005084111 (1)
+application:hello_request_time_seconds{quantile="0.999"} 2.005084111 <1>
 # TYPE application:magic_number_guage gauge
 # HELP application:magic_number_guage Magic number
-application:magic_number_guage 42 (3)
+application:magic_number_guage 42 <3>
 # TYPE application:hello_count counter
 # HELP application:hello_count Number of times the hello() method is requested
-application:hello_count 1 (2)
+application:hello_count 1 <2>
 ----
-
-I have added three callouts:
-
-. One of the percentiles from `@Timed`. Due to the sleep, it is close to two seconds.
-. This metrics is based on `@Counted`. We invoked the method once via curl. 
-. This metric is based on the `@Gauge`. We did a post with curl to set the `magicNumber` to 42. So, this is what the gauge will get from `getMagicNumber()`.
+<1> This is one of the percentiles from `@Timed`. Due to the sleep, it is close to two seconds.
+<2> This metrics is based on `@Counted`. We invoked the method once via curl. 
+<3> This metric is based on the `@Gauge`. We did a post with curl to set the `magicNumber` to 42. So, this is what the gauge will get from `getMagicNumber()`.
 
 As a final note: I like the Java EE-approach of having a single dependency to develop against (`javax:javaee-api:7.0`).
 I have used the same approach here for the Microprofile.
