@@ -37,7 +37,8 @@ The `build/libs/hello.war` is built with the normal Gradle `build` task. If we s
 [source, groovy]
 ----
 test {
-    exclude '**/*IT.class'
+    // Do not run integration-tests having suffix 'IT'
+    include '**/*Test.class'
 }
 
 dependencies {
