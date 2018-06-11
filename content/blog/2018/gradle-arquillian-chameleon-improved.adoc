@@ -8,7 +8,7 @@
 In a previous post I have already described how to use Arquillian Chameleon to simplify the Arquillian config.
 
 With the latest improvements that are described link:http://www.lordofthejars.com/2018/03/arquillian-chameleon-simplifying-your.html[here] in more detail,
-it is now possible to minimize the require configuration:
+it is now possible to minimize the required configuration:
 
 * Only a single dependency
 * No `arquillian.xml`
@@ -29,7 +29,7 @@ dependencies {
 }
 ----
 
-The container which is used, only need to be defined via the `@ChameleonTarget` annotation.
+The used container only needs to be defined via the `@ChameleonTarget` annotation.
 Also note the new `@RunWith(ArquillianChameleon.class)`. This not the regular `@RunWith(ArquillianChameleon.class)`.
 
 [source, java]
