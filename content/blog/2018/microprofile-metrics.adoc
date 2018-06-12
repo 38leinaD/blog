@@ -7,7 +7,7 @@
 
 These are my personal notes on getting familiar with link:https://github.com/eclipse/microprofile-bom/releases/download/1.3/microprofile-spec-1.3.pdf[MicroProfile 1.3]. In specific Metrics 1.1.
 As a basis, I have been using link:https://openliberty.io/guides/microprofile-metrics.html[the tutorial on OpenLiberty.io].
-Not suprising, I am using OpenLiberty (version 18.0.0.1). The `server.xml` which serves as the starting-point is described link:http://dplatz.de/blog/2018/wlp-jee8.html[here].
+Not suprising, I am using OpenLiberty (version 18.0.0.1). The `server.xml` which serves as the starting-point is described link:/blog/2018/wlp-jee8.html[here].
 I am just listing the used features here:
 
 .server.xml

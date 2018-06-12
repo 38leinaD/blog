@@ -33,7 +33,7 @@ print 'Done.'
 ----
 
 
-It allows me to work with VSCode and Gradle as I have described in link:http://dplatz.de/blog/2018/redeploy.html[this post].
+It allows me to work with VSCode and Gradle as I have described in link:/blog/2018/redeploy.html[this post].
 
 Start the docker container with below command to mount the auto-deploy folder as a volume:
 
