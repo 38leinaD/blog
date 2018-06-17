@@ -1,9 +1,9 @@
-= Even simpler Arquillian Chameleon usage with Gradle
+= Self-Contained Java EE applications with JDBC
 .
 2018-06-14
 :jbake-type: post
 :jbake-tags: gradle, wildfly, arquillian
-:jbake-status: published
+:jbake-status: draft
 
 
 In today's post I would like to describe a feature of Java EE that I always found interesting but never used due to it's limitation; until, I learned about some new aspect in a twitter-discussion. This post is about `@DatasourceDefinition` which is a way of declaring a datasource within your application via annotation, instead of having to configure the application-server. I.e. it is a portable way that your Java EE application can be self-contained and e.g. on JBoss does not requires changes to the `standalone.xml`.
@@ -178,6 +178,8 @@ public class DatasourceProducer {
 }
 
 ----
+
+https://issues.jboss.org/browse/WFLY-10581
 
 ----
 11:51:53,100 WARN  [org.jboss.jca.core.connectionmanager.pool.strategy.OnePool] (default task-1) IJ000604: Throwable while attempting to get a new connection: null: javax.resource.ResourceException: IJ031084: Unable to create connection
@@ -528,4 +530,33 @@ Caused by: org.postgresql.util.PSQLException: FATAL: role "${user:postgres}" doe
 	at org.jboss.jca.adapters.jdbc.xa.XAManagedConnectionFactory.getXAManagedConnection(XAManagedConnectionFactory.java:515)
 	... 16 more
 
+----
+
+Payara: no defaults
+
+----
+@Singleton
+@DataSourceDefinition(
+        name = "java:app/jdbc/primary",
+        className = "org.postgresql.xa.PGXADataSource",
+        user = "postgres",
+        password = "postgres",
+        serverName = "${ENV=serverName}",
+        portNumber = 5432,
+        databaseName = "postgres",
+        minPoolSize = 10,
+        maxPoolSize = 50)
+public class DatasourceProducer {
+
+	
+	@Resource(lookup="java:app/jdbc/primary")
+	DataSource ds;
+	
+	
+	@Produces
+	public DataSource getDatasource() {
+		return ds;
+	}
+	
+}
 ----
