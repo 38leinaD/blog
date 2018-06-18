@@ -171,7 +171,7 @@ Additionally, make sure to add `<feature>bells-1.0</feature>`.
 == Try it
 
 As this post is already getting to long, I will not got into detail here how to use this from your Java EE application. This will be for another post.
-But you can already get a working Java EE project to get your hands dirty from link:https://github.com/38leinaD/eclipselink-cache[my GitHub repository].
+But you can already get a working Java EE project to get your hands dirty from link:https://github.com/38leinaD/jee-samples/tree/master/eclipselink-cache[my GitHub repository].
 Start the Docker Compose environment and use the contained `test.sh` to invoke some cURL requests against the application on two different cluster-nodes.
 
 == Conclusion
