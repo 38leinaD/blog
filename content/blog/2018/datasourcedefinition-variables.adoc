@@ -5,8 +5,12 @@
 :jbake-tags: gradle, wildfly, arquillian
 :jbake-status: draft
 
+In this post I would like to outline how to build a self-contained Java EE application (WAR) that uses JPA via custom JDBC-driver but with zero application-server configuration/customizing. I will be using Java EE 8-compliant application-servers but that does not mean it is a new feature. I will work in the same way on Java EE 7.
 
-In today's post I would like to describe a feature of Java EE that I always found interesting but never used due to it's limitation; until, I learned about some new aspect in a twitter-discussion. This post is about `@DatasourceDefinition` which is a way of declaring a datasource within your application via annotation, instead of having to configure the application-server. I.e. it is a portable way that your Java EE application can be self-contained and e.g. on JBoss does not requires changes to the `standalone.xml`.
+To achieve our goal, I will leverage a feature of Java EE 7 that I always found interesting but never used due to it's limitations: `@DatasourceDefinition`.
+It is a way of declaring a datasource within your application via annotation, instead of having to configure it outside the application in via non-portable configurations-scripts for the application-server of your choice.
+E.g. on JBoss you would usually configure your datasource in the `standalone.xml`; either directly or via a JBoss .cli-script.
+Below you find an annotation that you can use within your application to define a datasource in a portable way:
 
 [source, java]
 ----
@@ -20,85 +24,44 @@ In today's post I would like to describe a feature of Java EE that I always foun
         databaseName = "postgres")
 ----
 
-To me, this was never super usefull because you hard-code your database-credentials. To me, this made it not applicable in any case yet.
-Until, a twitter-discussion lead me to realize that at least Wildfly and Payara come with a vendor-specific feature to do variable-replaments in the annotation's values.
+To me, this was never super useful because you hard-code your database-credentials. This made it not applicable in any a lot of use-cases that go beyond a small proof-of-concept app.
+Until, a twitter-discussion lead me to realize that at least Wildfly and Payara come with vendor-specific features to do variable-replaments in the annotation-values.
 
-For Wildfly, you can find it under "Annotation Property Replacement" in the link:https://docs.jboss.org/author/display/WFLY/Subsystem+configuration[admin-guide]:
-++++
-<blockquote class="twitter-tweet" data-conversation="none" data-lang="en"><p lang="en" dir="ltr">For WildFly, see annotation-property-replacement here: <a href="https://t.co/UCGVlNVJkj">https://t.co/UCGVlNVJkj</a></p>&mdash; OmniFaces (@OmniFaces) <a href="https://twitter.com/OmniFaces/status/1006631897034829824?ref_src=twsrc%5Etfw">June 12, 2018</a></blockquote>
-<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
-++++
+But lets start from the beginning.
 
-For Payara, you can find it link:https://docs.payara.fish/documentation/payara-server/server-configuration/var-substitution/usage-of-variables.html[here]:
-++++
-<blockquote class="twitter-tweet" data-conversation="none" data-lang="en"><p lang="en" dir="ltr">For Payara here is the Documentation: <a href="https://t.co/jQMOMVLy3N">https://t.co/jQMOMVLy3N</a><br><br>I think I saw something in Wildfly docs, but I’m not sure</p>&mdash; Felipe Moraes (@fe_amoraes) <a href="https://twitter.com/fe_amoraes/status/1006611447500046336?ref_src=twsrc%5Etfw">June 12, 2018</a></blockquote>
-<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
-++++
+== Datasource-definition and JPA
 
-Liberty does not have it yet, but there is an link:https://github.com/OpenLiberty/open-liberty/issues/3963[issue] for it:
-+
-++++
-<blockquote class="twitter-tweet" data-conversation="none" data-cards="hidden" data-lang="en"><p lang="en" dir="ltr">No, interesting idea so I raised an issue: <a href="https://t.co/hAvZnU8opO">https://t.co/hAvZnU8opO</a></p>&mdash; Alasdair (@nottycode) <a href="https://twitter.com/nottycode/status/1006940822183596033?ref_src=twsrc%5Etfw">June 13, 2018</a></blockquote>
-<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
-++++
-
-So, with this we can really build a selfcontained application where datasource-definitions and JDBC-drivers are contained within the WAR-file. The database-credentials can now be injected from the outside.
-
-== Steps for Wildfly + PostgreSQL
-
-=== Enabling the Feature
-
-Firstly, we have to enable the variable-replacement feture, which is not the case by default:
-
-[source,xml]
-----
-<subsystem xmlns="urn:jboss:domain:ee:4.0">
-    <annotation-property-replacement>true</annotation-property-replacement>
-    <!-- ... -->
-</subsystem>       
-----
-
-So, technically, we still hava modification in the `standalone.xml` we have to do.
-
-=== Define Datasource
+Below you find a defintion and a producer for a datasource within your application:
 
 [source, java]
 ----
 @Singleton
 @DataSourceDefinition(
-        name = "java:/datasources/primary",
+        name = "java:app/jdbc/primary",
         className = "org.postgresql.xa.PGXADataSource",
-        user = "${user:postgres}",
-        password = "${password:postgres}",
-        serverName = "${serverName:localhost}",
+        user = "postgres",
+        password = "postgres",
+        serverName = "postgres",
         portNumber = 5432,
-        databaseName = "${databaseName:postgres}",
+        databaseName = "postgres",
         minPoolSize = 10,
         maxPoolSize = 50)
 public class DatasourceProducer {
- 
-	@Resource(lookup="java:/datasources/primary")
+	
+	@Resource(lookup="java:app/jdbc/primary")
 	DataSource ds;
 	
-	/**
-	 * This @Produces makes it injectable in other places via
-	 * <code>
-	 * @Inject Datasource ds;
-	 * </code>
-	 */
 	@Produces
 	public DataSource getDatasource() {
 		return ds;
-	}
+	}	
 }
 ----
 
-The main part is the `@DataSourceDefinition` with field like `serverName = "${serverName:localhost}"`.
-This means, that you can use a Java system-property to set the `serverName` from the outside; but also a default of `localhost` is provided if it is not set.
-So, when starting JBoss you can provide it as `./standalone.sh -DserverName=dbserver123`.
+The `@DatasourceDefinition` annotation is sufficient here to bind the datasource for PostgreSQL under the global JNDI-name `java:app/jdbc/primary`.
 
-The content of the `DatasourceProducer` is just additional code that exposes the datasource and makes it injectable in other managed beans.
-If you are just using JPA, there is no need for it and you would just reference it in your `persistence.xml`:
+The useage of `@Resource` and `@Produces` is just additional code that exposes the datasource and makes it injectable in other managed beans via `@Inject Datasource ds`.
+But for JPA, this is not needed. What we need is a `persistence.xml` that uses the same JNDI-name:
 
 [source, xml]
 ----
@@ -109,454 +72,186 @@ If you are just using JPA, there is no need for it and you would just reference 
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
     xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/persistence http://xmlns.jcp.org/xml/ns/persistence/persistence_2_1.xsd">
     <persistence-unit name="DefaultPU" transaction-type="JTA">
-        <jta-data-source>java:/datasources/primary</jta-data-source>
+        <jta-data-source>java:app/jdbc/primary</jta-data-source>
         <exclude-unlisted-classes>false</exclude-unlisted-classes>
         <properties>
             <property name="javax.persistence.schema-generation.database.action" value="drop-and-create" />
             <property name="javax.persistence.schema-generation.scripts.action" value="drop-and-create" />
             <property name="javax.persistence.schema-generation.scripts.create-target" value="schemaCreate.ddl" />
             <property name="javax.persistence.schema-generation.scripts.drop-target" value="schemaDrop.ddl" />
+
+            <property name="eclipselink.logging.level.sql" value="FINE" />
+            <property name="eclipselink.logging.level" value="FINE" />
+            <property name="eclipselink.logging.level.cache" value="FINE" />
+
+            <property name="hibernate.show_sql" value="true" />
+            <property name="hibernate.format_sql" value="true" />
+            <!--property name="hibernate.generate_statistics" value="true" /-->
         </properties>
     </persistence-unit>
 </persistence>
 ----
 
-=== Packaging JDBC drivers
+From here on, it is plain JPA: Define some entity and inject the EntityManager via `@PersistenceContext EntityManager em;` to interact with JPA.
 
-If we want to make our application truely self-contained, we also want to package the JDBC-driver into the application-archive.
+== Packaging of the JDBC-driver
+
+You might have noticed that the `@DataSourceDefinition` references the JDBC-driver-class `org.postgresql.xa.PGXADataSource`.
+Obviously, it has the available for the application to connect to the database.
+This can be done by placing the JDBC-driver in the application-server; e.g. under Wildfly, you register the JDBC-driver as a module.
+But what we want is a self-contained application where the JDBC-driver is coming with the application.
+This is very simple to achieve. Just add a runtime-dependency to to the JDBC-driver. In Gradle, this is done in your `build.gradle`:
 
 [source, groovy]
 ----
 dependencies {
-    providedCompile 'javax:javaee-api:7.0'
-	compile: 'org.postgresql:postgresql:9.4.1212'
+    providedCompile 'javax:javaee-api:8.0'
+    runtime 'org.postgresql:postgresql:9.4.1212'
 }
 ----
 
-I have mixed feelings about it because it increases the size of the application-archive and is part of the infrastructure, but in certain cases where we want to package our application as a self-contained product, it might make sense.
+== Dynamic Configuration
+
+What we have now is a self-contained Java EE application-archive (WAR) but the connection to the database and the credentials are hard-coded in the annotation-properties.
+To make this really useful, we have to be able to overwrite this values for each deployment.
+This is supported in a non-portable way by different vendors and asking the right people on Twitter lead me to the correct documentation.
+
+=== Payara
+
+++++
+<blockquote class="twitter-tweet" data-conversation="none" data-lang="en"><p lang="en" dir="ltr">For Payara here is the Documentation: <a href="https://t.co/jQMOMVLy3N">https://t.co/jQMOMVLy3N</a><br><br>I think I saw something in Wildfly docs, but I’m not sure</p>&mdash; Felipe Moraes (@fe_amoraes) <a href="https://twitter.com/fe_amoraes/status/1006611447500046336?ref_src=twsrc%5Etfw">June 12, 2018</a></blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+++++
+
+So, for Payara we find the documentation link:https://docs.payara.fish/documentation/payara-server/server-configuration/var-substitution/usage-of-variables.html[here].
+Note that we will have to modify the annotation-values like this to read from environment variables:
+
+[source, java]
+----
+@DataSourceDefinition(
+        name = "java:app/jdbc/primary",
+        className = "org.postgresql.xa.PGXADataSource",
+        user = "${ENV=DB_USER}",
+        password = "${ENV=DB_PASSWORD}",
+        serverName = "${ENV=DB_SERVERNAME}",
+        portNumber = 5432,
+        databaseName = "${ENV=DB_DATABASENAME}",
+        minPoolSize = 10,
+        maxPoolSize = 50)
+----
+
+
+You can find this as a working Gradle-project plus Docker-Compose environment on link:https://github.com/38leinaD/jee-samples/tree/master/datasource-definition[Github].
+The steps are very simple:
+
+----
+git clone https://github.com/38leinaD/jee-samples.git
+cd jee-samples/datasource-definition/cars
+./gradlew build
+docker-compose -f docker-compose.payara.yml up
+----
+
+You will find the environment variables beeing set in the `docker-compose.payara.yml`.
+
+=== Widlfly
+
+
+++++
+<blockquote class="twitter-tweet" data-conversation="none" data-lang="en"><p lang="en" dir="ltr">For WildFly, see annotation-property-replacement here: <a href="https://t.co/UCGVlNVJkj">https://t.co/UCGVlNVJkj</a></p>&mdash; OmniFaces (@OmniFaces) <a href="https://twitter.com/OmniFaces/status/1006631897034829824?ref_src=twsrc%5Etfw">June 12, 2018</a></blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+++++
+
+For Wildfly, you can find it under "Annotation Property Replacement" in the link:https://docs.jboss.org/author/display/WFLY/Subsystem+configuration[admin-guide].
+
+Firstly, we have to enable the variable-replacement feature, which is not the case by default:
+
+[source,xml]
+----
+<subsystem xmlns="urn:jboss:domain:ee:4.0">
+    <annotation-property-replacement>true</annotation-property-replacement>
+    <!-- ... -->
+</subsystem>       
+----
+
+So, technically, we still hava to modify the application-server in the `standalone.xml` in this case.
+
+But then, you can use annotation-properties in the format `${<environment-variable>:<default-value>}`:
+
+[source, java]
+----
+@DataSourceDefinition(
+    name = "java:app/jdbc/primary",
+    className = "org.postgresql.xa.PGXADataSource",
+    user = "${DB_USER:postgres}",
+    password = "${DB_PASSWORD:postgres}",
+    serverName = "${DB_SERVERNAME:postgres}",
+    portNumber = 5432,
+    databaseName = "${DB_DATABASENAME:postgres}",
+    minPoolSize = 10,
+    maxPoolSize = 50)
+----
+
+If you run this, you will notice the following exception:
+
+
+----
+Caused by: org.postgresql.util.PSQLException: FATAL: role "${DB_USER:postgres}" does not exist
+	at org.postgresql.core.v3.QueryExecutorImpl.receiveErrorResponse(QueryExecutorImpl.java:2455)
+	at org.postgresql.core.v3.QueryExecutorImpl.readStartupMessages(QueryExecutorImpl.java:2586)
+	at org.postgresql.core.v3.QueryExecutorImpl.<init>(QueryExecutorImpl.java:113)
+	at org.postgresql.core.v3.ConnectionFactoryImpl.openConnectionImpl(ConnectionFactoryImpl.java:222)
+	at org.postgresql.core.ConnectionFactory.openConnection(ConnectionFactory.java:52)
+	at org.postgresql.jdbc.PgConnection.<init>(PgConnection.java:216)
+	at org.postgresql.Driver.makeConnection(Driver.java:404)
+	at org.postgresql.Driver.connect(Driver.java:272)
+	at java.sql.DriverManager.getConnection(DriverManager.java:664)
+	at java.sql.DriverManager.getConnection(DriverManager.java:247)
+	at org.postgresql.ds.common.BaseDataSource.getConnection(BaseDataSource.java:86)
+	at org.postgresql.xa.PGXADataSource.getXAConnection(PGXADataSource.java:48)
+	at org.jboss.jca.adapters.jdbc.xa.XAManagedConnectionFactory.getXAManagedConnection(XAManagedConnectionFactory.java:515)
+	... 133 more
+
+----
+
+
+
+https://issues.jboss.org/browse/WFLY-10581
+
+
+[source, java]
+----
+@DataSourceDefinition(
+    name = "java:app/jdbc/primary",
+    className = "org.postgresql.xa.PGXADataSource",
+    user = "postgres",
+    password = "postgres",
+    serverName = "${DB_SERVERNAME:postgres}",
+    portNumber = 5432,
+    databaseName = "${DB_DATABASENAME:postgres}",
+    minPoolSize = 10,
+    maxPoolSize = 50)
+----
+
+=== Liberty
+
+Liberty does not have it yet, but there is an link:https://github.com/OpenLiberty/open-liberty/issues/3963[issue] for it:
++
+++++
+<blockquote class="twitter-tweet" data-conversation="none" data-cards="hidden" data-lang="en"><p lang="en" dir="ltr">No, interesting idea so I raised an issue: <a href="https://t.co/hAvZnU8opO">https://t.co/hAvZnU8opO</a></p>&mdash; Alasdair (@nottycode) <a href="https://twitter.com/nottycode/status/1006940822183596033?ref_src=twsrc%5Etfw">June 13, 2018</a></blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+++++
+
 
 
 == Conclusion
 
 This is a powerful mechanism. If you wanted, you could even make the `className` dynamic and package multiple JDBC-drivers.
+Hopefully standardized in the future.
 
-////
-CREATE TABLE Cars (
-    model varchar(255)
-);
+JBoss
++ has defaults
 
-docker run --rm -p 5432:5432 -v $(pwd)/ddl.sql:/docker-entrypoint-initdb.d/ddl.sql postgres:9.5
-////
-
-----
-@Singleton
-@DataSourceDefinition(
-        name = "java:/datasources/primary",
-        className = "org.postgresql.xa.PGXADataSource",
-        user = "${user:postgres}",
-        password = "${password:postgres}",
-        serverName = "${serverName:localhost}",
-        portNumber = 5432,
-        databaseName = "${databaseName:postgres}",
-        minPoolSize = 10,
-        maxPoolSize = 50)
-public class DatasourceProducer {
- 
-	@Resource(lookup="java:/datasources/primary")
-	DataSource ds;
-	
-	/**
-	 * This @Produces makes it injectable in other places via
-	 * <code>
-	 * @Inject Datasource ds;
-	 * </code>
-	 */
-	@Produces
-	public DataSource getDatasource() {
-		return ds;
-	}
-}
-
-----
-
-https://issues.jboss.org/browse/WFLY-10581
-
-----
-11:51:53,100 WARN  [org.jboss.jca.core.connectionmanager.pool.strategy.OnePool] (default task-1) IJ000604: Throwable while attempting to get a new connection: null: javax.resource.ResourceException: IJ031084: Unable to create connection
-	at org.jboss.jca.adapters.jdbc.xa.XAManagedConnectionFactory.getXAManagedConnection(XAManagedConnectionFactory.java:531)
-	at org.jboss.jca.adapters.jdbc.xa.XAManagedConnectionFactory.createManagedConnection(XAManagedConnectionFactory.java:438)
-	at org.jboss.jca.core.connectionmanager.pool.mcp.SemaphoreConcurrentLinkedDequeManagedConnectionPool.createConnectionEventListener(SemaphoreConcurrentLinkedDequeManagedConnectionPool.java:1326)
-	at org.jboss.jca.core.connectionmanager.pool.mcp.SemaphoreConcurrentLinkedDequeManagedConnectionPool.getConnection(SemaphoreConcurrentLinkedDequeManagedConnectionPool.java:499)
-	at org.jboss.jca.core.connectionmanager.pool.AbstractPool.getTransactionNewConnection(AbstractPool.java:714)
-	at org.jboss.jca.core.connectionmanager.pool.AbstractPool.getConnection(AbstractPool.java:613)
-	at org.jboss.jca.core.connectionmanager.AbstractConnectionManager.getManagedConnection(AbstractConnectionManager.java:624)
-	at org.jboss.jca.core.connectionmanager.tx.TxConnectionManagerImpl.getManagedConnection(TxConnectionManagerImpl.java:430)
-	at org.jboss.jca.core.connectionmanager.AbstractConnectionManager.allocateConnection(AbstractConnectionManager.java:789)
-	at org.jboss.jca.adapters.jdbc.WrapperDataSource.getConnection(WrapperDataSource.java:138)
-	at org.jboss.as.connector.subsystems.datasources.WildFlyDataSource.getConnection(WildFlyDataSource.java:64)
-	at de.dplatz.example.helloworld.business.boundary.HealthCheckResource.healthcheck(HealthCheckResource.java:25)
-	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
-	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
-	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
-	at java.lang.reflect.Method.invoke(Method.java:498)
-	at org.jboss.as.ee.component.ManagedReferenceMethodInterceptor.processInvocation(ManagedReferenceMethodInterceptor.java:52)
-	at org.jboss.invocation.InterceptorContext.proceed(InterceptorContext.java:422)
-	at org.jboss.invocation.InterceptorContext$Invocation.proceed(InterceptorContext.java:509)
-	at org.jboss.as.weld.interceptors.Jsr299BindingsInterceptor.doMethodInterception(Jsr299BindingsInterceptor.java:90)
-	at org.jboss.as.weld.interceptors.Jsr299BindingsInterceptor.processInvocation(Jsr299BindingsInterceptor.java:101)
-	at org.jboss.as.ee.component.interceptors.UserInterceptorFactory$1.processInvocation(UserInterceptorFactory.java:63)
-	at org.jboss.invocation.InterceptorContext.proceed(InterceptorContext.java:422)
-	at org.jboss.as.ejb3.component.invocationmetrics.ExecutionTimeInterceptor.processInvocation(ExecutionTimeInterceptor.java:43)
-	at org.jboss.invocation.InterceptorContext.proceed(InterceptorContext.java:422)
-	at org.jboss.as.jpa.interceptor.SBInvocationInterceptor.processInvocation(SBInvocationInterceptor.java:47)
-	at org.jboss.invocation.InterceptorContext.proceed(InterceptorContext.java:422)
-	at org.jboss.as.ee.concurrent.ConcurrentContextInterceptor.processInvocation(ConcurrentContextInterceptor.java:45)
-	at org.jboss.invocation.InterceptorContext.proceed(InterceptorContext.java:422)
-	at org.jboss.invocation.InitialInterceptor.processInvocation(InitialInterceptor.java:40)
-	at org.jboss.invocation.InterceptorContext.proceed(InterceptorContext.java:422)
-	at org.jboss.invocation.ChainedInterceptor.processInvocation(ChainedInterceptor.java:53)
-	at org.jboss.as.ee.component.interceptors.ComponentDispatcherInterceptor.processInvocation(ComponentDispatcherInterceptor.java:52)
-	at org.jboss.invocation.InterceptorContext.proceed(InterceptorContext.java:422)
-	at org.jboss.as.ejb3.component.pool.PooledInstanceInterceptor.processInvocation(PooledInstanceInterceptor.java:51)
-	at org.jboss.invocation.InterceptorContext.proceed(InterceptorContext.java:422)
-	at org.jboss.as.ejb3.tx.CMTTxInterceptor.invokeInOurTx(CMTTxInterceptor.java:237)
-	at org.jboss.as.ejb3.tx.CMTTxInterceptor.required(CMTTxInterceptor.java:362)
-	at org.jboss.as.ejb3.tx.CMTTxInterceptor.processInvocation(CMTTxInterceptor.java:144)
-	at org.jboss.invocation.InterceptorContext.proceed(InterceptorContext.java:422)
-	at org.jboss.invocation.InterceptorContext$Invocation.proceed(InterceptorContext.java:509)
-	at org.jboss.weld.module.ejb.AbstractEJBRequestScopeActivationInterceptor.aroundInvoke(AbstractEJBRequestScopeActivationInterceptor.java:72)
-	at org.jboss.as.weld.ejb.EjbRequestScopeActivationInterceptor.processInvocation(EjbRequestScopeActivationInterceptor.java:89)
-	at org.jboss.invocation.InterceptorContext.proceed(InterceptorContext.java:422)
-	at org.jboss.as.ejb3.component.interceptors.CurrentInvocationContextInterceptor.processInvocation(CurrentInvocationContextInterceptor.java:41)
-	at org.jboss.invocation.InterceptorContext.proceed(InterceptorContext.java:422)
-	at org.jboss.as.ejb3.component.invocationmetrics.WaitTimeInterceptor.processInvocation(WaitTimeInterceptor.java:47)
-	at org.jboss.invocation.InterceptorContext.proceed(InterceptorContext.java:422)
-	at org.jboss.as.ejb3.security.SecurityContextInterceptor.processInvocation(SecurityContextInterceptor.java:100)
-	at org.jboss.invocation.InterceptorContext.proceed(InterceptorContext.java:422)
-	at org.jboss.as.ejb3.deployment.processors.StartupAwaitInterceptor.processInvocation(StartupAwaitInterceptor.java:22)
-	at org.jboss.invocation.InterceptorContext.proceed(InterceptorContext.java:422)
-	at org.jboss.as.ejb3.component.interceptors.ShutDownInterceptorFactory$1.processInvocation(ShutDownInterceptorFactory.java:64)
-	at org.jboss.invocation.InterceptorContext.proceed(InterceptorContext.java:422)
-	at org.jboss.as.ejb3.component.interceptors.LoggingInterceptor.processInvocation(LoggingInterceptor.java:67)
-	at org.jboss.invocation.InterceptorContext.proceed(InterceptorContext.java:422)
-	at org.jboss.as.ee.component.NamespaceContextInterceptor.processInvocation(NamespaceContextInterceptor.java:50)
-	at org.jboss.invocation.InterceptorContext.proceed(InterceptorContext.java:422)
-	at org.jboss.as.ejb3.component.interceptors.AdditionalSetupInterceptor.processInvocation(AdditionalSetupInterceptor.java:54)
-	at org.jboss.invocation.InterceptorContext.proceed(InterceptorContext.java:422)
-	at org.jboss.invocation.ContextClassLoaderInterceptor.processInvocation(ContextClassLoaderInterceptor.java:60)
-	at org.jboss.invocation.InterceptorContext.proceed(InterceptorContext.java:422)
-	at org.jboss.invocation.InterceptorContext.run(InterceptorContext.java:438)
-	at org.wildfly.security.manager.WildFlySecurityManager.doChecked(WildFlySecurityManager.java:619)
-	at org.jboss.invocation.AccessCheckingInterceptor.processInvocation(AccessCheckingInterceptor.java:57)
-	at org.jboss.invocation.InterceptorContext.proceed(InterceptorContext.java:422)
-	at org.jboss.invocation.ChainedInterceptor.processInvocation(ChainedInterceptor.java:53)
-	at org.jboss.as.ee.component.ViewService$View.invoke(ViewService.java:198)
-	at org.jboss.as.ee.component.ViewDescription$1.processInvocation(ViewDescription.java:185)
-	at org.jboss.as.ee.component.ProxyInvocationHandler.invoke(ProxyInvocationHandler.java:81)
-	at de.dplatz.example.helloworld.business.boundary.HealthCheckResource$$$view2.healthcheck(Unknown Source)
-	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
-	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
-	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
-	at java.lang.reflect.Method.invoke(Method.java:498)
-	at org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:140)
-	at org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:510)
-	at org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:401)
-	at org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:365)
-	at org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:361)
-	at org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:367)
-	at org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:339)
-	at org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:312)
-	at org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:441)
-	at org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:231)
-	at org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:137)
-	at org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:361)
-	at org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:140)
-	at org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:217)
-	at org.jboss.resteasy.plugins.server.servlet.ServletContainerDispatcher.service(ServletContainerDispatcher.java:227)
-	at org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher.service(HttpServletDispatcher.java:56)
-	at org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher.service(HttpServletDispatcher.java:51)
-	at javax.servlet.http.HttpServlet.service(HttpServlet.java:791)
-	at io.undertow.servlet.handlers.ServletHandler.handleRequest(ServletHandler.java:74)
-	at io.undertow.servlet.handlers.security.ServletSecurityRoleHandler.handleRequest(ServletSecurityRoleHandler.java:62)
-	at io.undertow.servlet.handlers.ServletChain$1.handleRequest(ServletChain.java:68)
-	at io.undertow.servlet.handlers.ServletDispatchingHandler.handleRequest(ServletDispatchingHandler.java:36)
-	at org.wildfly.extension.undertow.security.SecurityContextAssociationHandler.handleRequest(SecurityContextAssociationHandler.java:78)
-	at io.undertow.server.handlers.PredicateHandler.handleRequest(PredicateHandler.java:43)
-	at io.undertow.servlet.handlers.security.SSLInformationAssociationHandler.handleRequest(SSLInformationAssociationHandler.java:132)
-	at io.undertow.servlet.handlers.security.ServletAuthenticationCallHandler.handleRequest(ServletAuthenticationCallHandler.java:57)
-	at io.undertow.server.handlers.PredicateHandler.handleRequest(PredicateHandler.java:43)
-	at io.undertow.security.handlers.AbstractConfidentialityHandler.handleRequest(AbstractConfidentialityHandler.java:46)
-	at io.undertow.servlet.handlers.security.ServletConfidentialityConstraintHandler.handleRequest(ServletConfidentialityConstraintHandler.java:64)
-	at io.undertow.security.handlers.AuthenticationMechanismsHandler.handleRequest(AuthenticationMechanismsHandler.java:60)
-	at io.undertow.servlet.handlers.security.CachedAuthenticatedSessionHandler.handleRequest(CachedAuthenticatedSessionHandler.java:77)
-	at io.undertow.security.handlers.NotificationReceiverHandler.handleRequest(NotificationReceiverHandler.java:50)
-	at io.undertow.security.handlers.AbstractSecurityContextAssociationHandler.handleRequest(AbstractSecurityContextAssociationHandler.java:43)
-	at io.undertow.server.handlers.PredicateHandler.handleRequest(PredicateHandler.java:43)
-	at org.wildfly.extension.undertow.security.jacc.JACCContextIdHandler.handleRequest(JACCContextIdHandler.java:61)
-	at io.undertow.server.handlers.PredicateHandler.handleRequest(PredicateHandler.java:43)
-	at org.wildfly.extension.undertow.deployment.GlobalRequestControllerHandler.handleRequest(GlobalRequestControllerHandler.java:68)
-	at io.undertow.server.handlers.PredicateHandler.handleRequest(PredicateHandler.java:43)
-	at io.undertow.servlet.handlers.ServletInitialHandler.handleFirstRequest(ServletInitialHandler.java:292)
-	at io.undertow.servlet.handlers.ServletInitialHandler.access$100(ServletInitialHandler.java:81)
-	at io.undertow.servlet.handlers.ServletInitialHandler$2.call(ServletInitialHandler.java:138)
-	at io.undertow.servlet.handlers.ServletInitialHandler$2.call(ServletInitialHandler.java:135)
-	at io.undertow.servlet.core.ServletRequestContextThreadSetupAction$1.call(ServletRequestContextThreadSetupAction.java:48)
-	at io.undertow.servlet.core.ContextClassLoaderSetupAction$1.call(ContextClassLoaderSetupAction.java:43)
-	at org.wildfly.extension.undertow.security.SecurityContextThreadSetupAction.lambda$create$0(SecurityContextThreadSetupAction.java:105)
-	at org.wildfly.extension.undertow.deployment.UndertowDeploymentInfoService$UndertowThreadSetupAction.lambda$create$0(UndertowDeploymentInfoService.java:1514)
-	at org.wildfly.extension.undertow.deployment.UndertowDeploymentInfoService$UndertowThreadSetupAction.lambda$create$0(UndertowDeploymentInfoService.java:1514)
-	at org.wildfly.extension.undertow.deployment.UndertowDeploymentInfoService$UndertowThreadSetupAction.lambda$create$0(UndertowDeploymentInfoService.java:1514)
-	at org.wildfly.extension.undertow.deployment.UndertowDeploymentInfoService$UndertowThreadSetupAction.lambda$create$0(UndertowDeploymentInfoService.java:1514)
-	at io.undertow.servlet.handlers.ServletInitialHandler.dispatchRequest(ServletInitialHandler.java:272)
-	at io.undertow.servlet.handlers.ServletInitialHandler.access$000(ServletInitialHandler.java:81)
-	at io.undertow.servlet.handlers.ServletInitialHandler$1.handleRequest(ServletInitialHandler.java:104)
-	at io.undertow.server.Connectors.executeRootHandler(Connectors.java:360)
-	at io.undertow.server.HttpServerExchange$1.run(HttpServerExchange.java:830)
-	at org.jboss.threads.ContextClassLoaderSavingRunnable.run(ContextClassLoaderSavingRunnable.java:35)
-	at org.jboss.threads.EnhancedQueueExecutor.safeRun(EnhancedQueueExecutor.java:1985)
-	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.doRunTask(EnhancedQueueExecutor.java:1487)
-	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1349)
-	at java.lang.Thread.run(Thread.java:748)
-Caused by: org.postgresql.util.PSQLException: FATAL: role "${user:postgres}" does not exist
-	at org.postgresql.core.v3.QueryExecutorImpl.receiveErrorResponse(QueryExecutorImpl.java:2455)
-	at org.postgresql.core.v3.QueryExecutorImpl.readStartupMessages(QueryExecutorImpl.java:2586)
-	at org.postgresql.core.v3.QueryExecutorImpl.<init>(QueryExecutorImpl.java:113)
-	at org.postgresql.core.v3.ConnectionFactoryImpl.openConnectionImpl(ConnectionFactoryImpl.java:222)
-	at org.postgresql.core.ConnectionFactory.openConnection(ConnectionFactory.java:52)
-	at org.postgresql.jdbc.PgConnection.<init>(PgConnection.java:216)
-	at org.postgresql.Driver.makeConnection(Driver.java:404)
-	at org.postgresql.Driver.connect(Driver.java:272)
-	at java.sql.DriverManager.getConnection(DriverManager.java:664)
-	at java.sql.DriverManager.getConnection(DriverManager.java:247)
-	at org.postgresql.ds.common.BaseDataSource.getConnection(BaseDataSource.java:86)
-	at org.postgresql.xa.PGXADataSource.getXAConnection(PGXADataSource.java:48)
-	at org.jboss.jca.adapters.jdbc.xa.XAManagedConnectionFactory.getXAManagedConnection(XAManagedConnectionFactory.java:515)
-	... 133 more
-
-11:51:53,121 ERROR [io.undertow.request] (default task-1) UT005023: Exception handling request to /helloworld/resources/health: org.jboss.resteasy.spi.UnhandledException: java.sql.SQLException: javax.resource.ResourceException: IJ000453: Unable to get managed connection for java:/datasources/primary
-	at org.jboss.resteasy.core.ExceptionHandler.handleApplicationException(ExceptionHandler.java:78)
-	at org.jboss.resteasy.core.ExceptionHandler.handleException(ExceptionHandler.java:222)
-	at org.jboss.resteasy.core.SynchronousDispatcher.writeException(SynchronousDispatcher.java:195)
-	at org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:457)
-	at org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:231)
-	at org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:137)
-	at org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:361)
-	at org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:140)
-	at org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:217)
-	at org.jboss.resteasy.plugins.server.servlet.ServletContainerDispatcher.service(ServletContainerDispatcher.java:227)
-	at org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher.service(HttpServletDispatcher.java:56)
-	at org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher.service(HttpServletDispatcher.java:51)
-	at javax.servlet.http.HttpServlet.service(HttpServlet.java:791)
-	at io.undertow.servlet.handlers.ServletHandler.handleRequest(ServletHandler.java:74)
-	at io.undertow.servlet.handlers.security.ServletSecurityRoleHandler.handleRequest(ServletSecurityRoleHandler.java:62)
-	at io.undertow.servlet.handlers.ServletChain$1.handleRequest(ServletChain.java:68)
-	at io.undertow.servlet.handlers.ServletDispatchingHandler.handleRequest(ServletDispatchingHandler.java:36)
-	at org.wildfly.extension.undertow.security.SecurityContextAssociationHandler.handleRequest(SecurityContextAssociationHandler.java:78)
-	at io.undertow.server.handlers.PredicateHandler.handleRequest(PredicateHandler.java:43)
-	at io.undertow.servlet.handlers.security.SSLInformationAssociationHandler.handleRequest(SSLInformationAssociationHandler.java:132)
-	at io.undertow.servlet.handlers.security.ServletAuthenticationCallHandler.handleRequest(ServletAuthenticationCallHandler.java:57)
-	at io.undertow.server.handlers.PredicateHandler.handleRequest(PredicateHandler.java:43)
-	at io.undertow.security.handlers.AbstractConfidentialityHandler.handleRequest(AbstractConfidentialityHandler.java:46)
-	at io.undertow.servlet.handlers.security.ServletConfidentialityConstraintHandler.handleRequest(ServletConfidentialityConstraintHandler.java:64)
-	at io.undertow.security.handlers.AuthenticationMechanismsHandler.handleRequest(AuthenticationMechanismsHandler.java:60)
-	at io.undertow.servlet.handlers.security.CachedAuthenticatedSessionHandler.handleRequest(CachedAuthenticatedSessionHandler.java:77)
-	at io.undertow.security.handlers.NotificationReceiverHandler.handleRequest(NotificationReceiverHandler.java:50)
-	at io.undertow.security.handlers.AbstractSecurityContextAssociationHandler.handleRequest(AbstractSecurityContextAssociationHandler.java:43)
-	at io.undertow.server.handlers.PredicateHandler.handleRequest(PredicateHandler.java:43)
-	at org.wildfly.extension.undertow.security.jacc.JACCContextIdHandler.handleRequest(JACCContextIdHandler.java:61)
-	at io.undertow.server.handlers.PredicateHandler.handleRequest(PredicateHandler.java:43)
-	at org.wildfly.extension.undertow.deployment.GlobalRequestControllerHandler.handleRequest(GlobalRequestControllerHandler.java:68)
-	at io.undertow.server.handlers.PredicateHandler.handleRequest(PredicateHandler.java:43)
-	at io.undertow.servlet.handlers.ServletInitialHandler.handleFirstRequest(ServletInitialHandler.java:292)
-	at io.undertow.servlet.handlers.ServletInitialHandler.access$100(ServletInitialHandler.java:81)
-	at io.undertow.servlet.handlers.ServletInitialHandler$2.call(ServletInitialHandler.java:138)
-	at io.undertow.servlet.handlers.ServletInitialHandler$2.call(ServletInitialHandler.java:135)
-	at io.undertow.servlet.core.ServletRequestContextThreadSetupAction$1.call(ServletRequestContextThreadSetupAction.java:48)
-	at io.undertow.servlet.core.ContextClassLoaderSetupAction$1.call(ContextClassLoaderSetupAction.java:43)
-	at org.wildfly.extension.undertow.security.SecurityContextThreadSetupAction.lambda$create$0(SecurityContextThreadSetupAction.java:105)
-	at org.wildfly.extension.undertow.deployment.UndertowDeploymentInfoService$UndertowThreadSetupAction.lambda$create$0(UndertowDeploymentInfoService.java:1514)
-	at org.wildfly.extension.undertow.deployment.UndertowDeploymentInfoService$UndertowThreadSetupAction.lambda$create$0(UndertowDeploymentInfoService.java:1514)
-	at org.wildfly.extension.undertow.deployment.UndertowDeploymentInfoService$UndertowThreadSetupAction.lambda$create$0(UndertowDeploymentInfoService.java:1514)
-	at org.wildfly.extension.undertow.deployment.UndertowDeploymentInfoService$UndertowThreadSetupAction.lambda$create$0(UndertowDeploymentInfoService.java:1514)
-	at io.undertow.servlet.handlers.ServletInitialHandler.dispatchRequest(ServletInitialHandler.java:272)
-	at io.undertow.servlet.handlers.ServletInitialHandler.access$000(ServletInitialHandler.java:81)
-	at io.undertow.servlet.handlers.ServletInitialHandler$1.handleRequest(ServletInitialHandler.java:104)
-	at io.undertow.server.Connectors.executeRootHandler(Connectors.java:360)
-	at io.undertow.server.HttpServerExchange$1.run(HttpServerExchange.java:830)
-	at org.jboss.threads.ContextClassLoaderSavingRunnable.run(ContextClassLoaderSavingRunnable.java:35)
-	at org.jboss.threads.EnhancedQueueExecutor.safeRun(EnhancedQueueExecutor.java:1985)
-	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.doRunTask(EnhancedQueueExecutor.java:1487)
-	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1349)
-	at java.lang.Thread.run(Thread.java:748)
-Caused by: java.sql.SQLException: javax.resource.ResourceException: IJ000453: Unable to get managed connection for java:/datasources/primary
-	at org.jboss.jca.adapters.jdbc.WrapperDataSource.getConnection(WrapperDataSource.java:146)
-	at org.jboss.as.connector.subsystems.datasources.WildFlyDataSource.getConnection(WildFlyDataSource.java:64)
-	at de.dplatz.example.helloworld.business.boundary.HealthCheckResource.healthcheck(HealthCheckResource.java:25)
-	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
-	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
-	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
-	at java.lang.reflect.Method.invoke(Method.java:498)
-	at org.jboss.as.ee.component.ManagedReferenceMethodInterceptor.processInvocation(ManagedReferenceMethodInterceptor.java:52)
-	at org.jboss.invocation.InterceptorContext.proceed(InterceptorContext.java:422)
-	at org.jboss.invocation.InterceptorContext$Invocation.proceed(InterceptorContext.java:509)
-	at org.jboss.as.weld.interceptors.Jsr299BindingsInterceptor.doMethodInterception(Jsr299BindingsInterceptor.java:90)
-	at org.jboss.as.weld.interceptors.Jsr299BindingsInterceptor.processInvocation(Jsr299BindingsInterceptor.java:101)
-	at org.jboss.as.ee.component.interceptors.UserInterceptorFactory$1.processInvocation(UserInterceptorFactory.java:63)
-	at org.jboss.invocation.InterceptorContext.proceed(InterceptorContext.java:422)
-	at org.jboss.as.ejb3.component.invocationmetrics.ExecutionTimeInterceptor.processInvocation(ExecutionTimeInterceptor.java:43)
-	at org.jboss.invocation.InterceptorContext.proceed(InterceptorContext.java:422)
-	at org.jboss.as.jpa.interceptor.SBInvocationInterceptor.processInvocation(SBInvocationInterceptor.java:47)
-	at org.jboss.invocation.InterceptorContext.proceed(InterceptorContext.java:422)
-	at org.jboss.as.ee.concurrent.ConcurrentContextInterceptor.processInvocation(ConcurrentContextInterceptor.java:45)
-	at org.jboss.invocation.InterceptorContext.proceed(InterceptorContext.java:422)
-	at org.jboss.invocation.InitialInterceptor.processInvocation(InitialInterceptor.java:40)
-	at org.jboss.invocation.InterceptorContext.proceed(InterceptorContext.java:422)
-	at org.jboss.invocation.ChainedInterceptor.processInvocation(ChainedInterceptor.java:53)
-	at org.jboss.as.ee.component.interceptors.ComponentDispatcherInterceptor.processInvocation(ComponentDispatcherInterceptor.java:52)
-	at org.jboss.invocation.InterceptorContext.proceed(InterceptorContext.java:422)
-	at org.jboss.as.ejb3.component.pool.PooledInstanceInterceptor.processInvocation(PooledInstanceInterceptor.java:51)
-	at org.jboss.invocation.InterceptorContext.proceed(InterceptorContext.java:422)
-	at org.jboss.as.ejb3.tx.CMTTxInterceptor.invokeInOurTx(CMTTxInterceptor.java:237)
-	at org.jboss.as.ejb3.tx.CMTTxInterceptor.required(CMTTxInterceptor.java:362)
-	at org.jboss.as.ejb3.tx.CMTTxInterceptor.processInvocation(CMTTxInterceptor.java:144)
-	at org.jboss.invocation.InterceptorContext.proceed(InterceptorContext.java:422)
-	at org.jboss.invocation.InterceptorContext$Invocation.proceed(InterceptorContext.java:509)
-	at org.jboss.weld.module.ejb.AbstractEJBRequestScopeActivationInterceptor.aroundInvoke(AbstractEJBRequestScopeActivationInterceptor.java:72)
-	at org.jboss.as.weld.ejb.EjbRequestScopeActivationInterceptor.processInvocation(EjbRequestScopeActivationInterceptor.java:89)
-	at org.jboss.invocation.InterceptorContext.proceed(InterceptorContext.java:422)
-	at org.jboss.as.ejb3.component.interceptors.CurrentInvocationContextInterceptor.processInvocation(CurrentInvocationContextInterceptor.java:41)
-	at org.jboss.invocation.InterceptorContext.proceed(InterceptorContext.java:422)
-	at org.jboss.as.ejb3.component.invocationmetrics.WaitTimeInterceptor.processInvocation(WaitTimeInterceptor.java:47)
-	at org.jboss.invocation.InterceptorContext.proceed(InterceptorContext.java:422)
-	at org.jboss.as.ejb3.security.SecurityContextInterceptor.processInvocation(SecurityContextInterceptor.java:100)
-	at org.jboss.invocation.InterceptorContext.proceed(InterceptorContext.java:422)
-	at org.jboss.as.ejb3.deployment.processors.StartupAwaitInterceptor.processInvocation(StartupAwaitInterceptor.java:22)
-	at org.jboss.invocation.InterceptorContext.proceed(InterceptorContext.java:422)
-	at org.jboss.as.ejb3.component.interceptors.ShutDownInterceptorFactory$1.processInvocation(ShutDownInterceptorFactory.java:64)
-	at org.jboss.invocation.InterceptorContext.proceed(InterceptorContext.java:422)
-	at org.jboss.as.ejb3.component.interceptors.LoggingInterceptor.processInvocation(LoggingInterceptor.java:67)
-	at org.jboss.invocation.InterceptorContext.proceed(InterceptorContext.java:422)
-	at org.jboss.as.ee.component.NamespaceContextInterceptor.processInvocation(NamespaceContextInterceptor.java:50)
-	at org.jboss.invocation.InterceptorContext.proceed(InterceptorContext.java:422)
-	at org.jboss.as.ejb3.component.interceptors.AdditionalSetupInterceptor.processInvocation(AdditionalSetupInterceptor.java:54)
-	at org.jboss.invocation.InterceptorContext.proceed(InterceptorContext.java:422)
-	at org.jboss.invocation.ContextClassLoaderInterceptor.processInvocation(ContextClassLoaderInterceptor.java:60)
-	at org.jboss.invocation.InterceptorContext.proceed(InterceptorContext.java:422)
-	at org.jboss.invocation.InterceptorContext.run(InterceptorContext.java:438)
-	at org.wildfly.security.manager.WildFlySecurityManager.doChecked(WildFlySecurityManager.java:619)
-	at org.jboss.invocation.AccessCheckingInterceptor.processInvocation(AccessCheckingInterceptor.java:57)
-	at org.jboss.invocation.InterceptorContext.proceed(InterceptorContext.java:422)
-	at org.jboss.invocation.ChainedInterceptor.processInvocation(ChainedInterceptor.java:53)
-	at org.jboss.as.ee.component.ViewService$View.invoke(ViewService.java:198)
-	at org.jboss.as.ee.component.ViewDescription$1.processInvocation(ViewDescription.java:185)
-	at org.jboss.as.ee.component.ProxyInvocationHandler.invoke(ProxyInvocationHandler.java:81)
-	at de.dplatz.example.helloworld.business.boundary.HealthCheckResource$$$view2.healthcheck(Unknown Source)
-	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
-	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
-	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
-	at java.lang.reflect.Method.invoke(Method.java:498)
-	at org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:140)
-	at org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:510)
-	at org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:401)
-	at org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:365)
-	at org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:361)
-	at org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:367)
-	at org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:339)
-	at org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:312)
-	at org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:441)
-	... 50 more
-Caused by: javax.resource.ResourceException: IJ000453: Unable to get managed connection for java:/datasources/primary
-	at org.jboss.jca.core.connectionmanager.AbstractConnectionManager.getManagedConnection(AbstractConnectionManager.java:690)
-	at org.jboss.jca.core.connectionmanager.tx.TxConnectionManagerImpl.getManagedConnection(TxConnectionManagerImpl.java:430)
-	at org.jboss.jca.core.connectionmanager.AbstractConnectionManager.allocateConnection(AbstractConnectionManager.java:789)
-	at org.jboss.jca.adapters.jdbc.WrapperDataSource.getConnection(WrapperDataSource.java:138)
-	... 124 more
-Caused by: javax.resource.ResourceException: IJ031084: Unable to create connection
-	at org.jboss.jca.adapters.jdbc.xa.XAManagedConnectionFactory.getXAManagedConnection(XAManagedConnectionFactory.java:531)
-	at org.jboss.jca.adapters.jdbc.xa.XAManagedConnectionFactory.createManagedConnection(XAManagedConnectionFactory.java:438)
-	at org.jboss.jca.core.connectionmanager.pool.mcp.SemaphoreConcurrentLinkedDequeManagedConnectionPool.createConnectionEventListener(SemaphoreConcurrentLinkedDequeManagedConnectionPool.java:1326)
-	at org.jboss.jca.core.connectionmanager.pool.mcp.SemaphoreConcurrentLinkedDequeManagedConnectionPool.getConnection(SemaphoreConcurrentLinkedDequeManagedConnectionPool.java:499)
-	at org.jboss.jca.core.connectionmanager.pool.AbstractPool.getTransactionNewConnection(AbstractPool.java:714)
-	at org.jboss.jca.core.connectionmanager.pool.AbstractPool.getConnection(AbstractPool.java:613)
-	at org.jboss.jca.core.connectionmanager.AbstractConnectionManager.getManagedConnection(AbstractConnectionManager.java:624)
-	... 127 more
-Caused by: org.postgresql.util.PSQLException: FATAL: role "${user:postgres}" does not exist
-	at org.postgresql.core.v3.QueryExecutorImpl.receiveErrorResponse(QueryExecutorImpl.java:2455)
-	at org.postgresql.core.v3.QueryExecutorImpl.readStartupMessages(QueryExecutorImpl.java:2586)
-	at org.postgresql.core.v3.QueryExecutorImpl.<init>(QueryExecutorImpl.java:113)
-	at org.postgresql.core.v3.ConnectionFactoryImpl.openConnectionImpl(ConnectionFactoryImpl.java:222)
-	at org.postgresql.core.ConnectionFactory.openConnection(ConnectionFactory.java:52)
-	at org.postgresql.jdbc.PgConnection.<init>(PgConnection.java:216)
-	at org.postgresql.Driver.makeConnection(Driver.java:404)
-	at org.postgresql.Driver.connect(Driver.java:272)
-	at java.sql.DriverManager.getConnection(DriverManager.java:664)
-	at java.sql.DriverManager.getConnection(DriverManager.java:247)
-	at org.postgresql.ds.common.BaseDataSource.getConnection(BaseDataSource.java:86)
-	at org.postgresql.xa.PGXADataSource.getXAConnection(PGXADataSource.java:48)
-	at org.jboss.jca.adapters.jdbc.xa.XAManagedConnectionFactory.getXAManagedConnection(XAManagedConnectionFactory.java:515)
-	... 133 more
-
-11:53:58,581 ERROR [org.jboss.jca.core.tx.jbossts.XAResourceRecoveryImpl] (Periodic Recovery) IJ000906: Error during crash recovery: java:/datasources/primary (IJ031084: Unable to create connection): javax.resource.ResourceException: IJ031084: Unable to create connection
-	at org.jboss.jca.adapters.jdbc.xa.XAManagedConnectionFactory.getXAManagedConnection(XAManagedConnectionFactory.java:531)
-	at org.jboss.jca.adapters.jdbc.xa.XAManagedConnectionFactory$1$1.run(XAManagedConnectionFactory.java:417)
-	at org.jboss.jca.adapters.jdbc.xa.XAManagedConnectionFactory$1$1.run(XAManagedConnectionFactory.java:414)
-	at java.security.AccessController.doPrivileged(Native Method)
-	at javax.security.auth.Subject.doAs(Subject.java:422)
-	at org.jboss.jca.adapters.jdbc.xa.XAManagedConnectionFactory$1.run(XAManagedConnectionFactory.java:413)
-	at org.jboss.jca.adapters.jdbc.xa.XAManagedConnectionFactory$1.run(XAManagedConnectionFactory.java:410)
-	at java.security.AccessController.doPrivileged(Native Method)
-	at org.jboss.jca.adapters.jdbc.xa.XAManagedConnectionFactory.createManagedConnection(XAManagedConnectionFactory.java:409)
-	at org.jboss.jca.core.tx.jbossts.XAResourceRecoveryImpl.open(XAResourceRecoveryImpl.java:355)
-	at org.jboss.jca.core.tx.jbossts.XAResourceRecoveryImpl.getXAResources(XAResourceRecoveryImpl.java:193)
-	at com.arjuna.ats.internal.jbossatx.jta.XAResourceRecoveryHelperWrapper.getXAResources(XAResourceRecoveryHelperWrapper.java:51)
-	at com.arjuna.ats.internal.jta.recovery.arjunacore.XARecoveryModule.resourceInitiatedRecoveryForRecoveryHelpers(XARecoveryModule.java:571)
-	at com.arjuna.ats.internal.jta.recovery.arjunacore.XARecoveryModule.periodicWorkFirstPass(XARecoveryModule.java:189)
-	at com.arjuna.ats.internal.jta.recovery.arjunacore.XARecoveryModule.periodicWorkFirstPass(XARecoveryModule.java:140)
-	at com.arjuna.ats.internal.arjuna.recovery.PeriodicRecovery.doWorkInternal(PeriodicRecovery.java:765)
-	at com.arjuna.ats.internal.arjuna.recovery.PeriodicRecovery.run(PeriodicRecovery.java:377)
-Caused by: org.postgresql.util.PSQLException: FATAL: role "${user:postgres}" does not exist
-	at org.postgresql.core.v3.QueryExecutorImpl.receiveErrorResponse(QueryExecutorImpl.java:2455)
-	at org.postgresql.core.v3.QueryExecutorImpl.readStartupMessages(QueryExecutorImpl.java:2586)
-	at org.postgresql.core.v3.QueryExecutorImpl.<init>(QueryExecutorImpl.java:113)
-	at org.postgresql.core.v3.ConnectionFactoryImpl.openConnectionImpl(ConnectionFactoryImpl.java:222)
-	at org.postgresql.core.ConnectionFactory.openConnection(ConnectionFactory.java:52)
-	at org.postgresql.jdbc.PgConnection.<init>(PgConnection.java:216)
-	at org.postgresql.Driver.makeConnection(Driver.java:404)
-	at org.postgresql.Driver.connect(Driver.java:272)
-	at java.sql.DriverManager.getConnection(DriverManager.java:664)
-	at java.sql.DriverManager.getConnection(DriverManager.java:247)
-	at org.postgresql.ds.common.BaseDataSource.getConnection(BaseDataSource.java:86)
-	at org.postgresql.xa.PGXADataSource.getXAConnection(PGXADataSource.java:48)
-	at org.jboss.jca.adapters.jdbc.xa.XAManagedConnectionFactory.getXAManagedConnection(XAManagedConnectionFactory.java:515)
-	... 16 more
-
-----
-
+Payara
++ no conif needed (annotation-property like in JBoss)
 Payara: no defaults
 
-----
-@Singleton
-@DataSourceDefinition(
-        name = "java:app/jdbc/primary",
-        className = "org.postgresql.xa.PGXADataSource",
-        user = "postgres",
-        password = "postgres",
-        serverName = "${ENV=serverName}",
-        portNumber = 5432,
-        databaseName = "postgres",
-        minPoolSize = 10,
-        maxPoolSize = 50)
-public class DatasourceProducer {
-
-	
-	@Resource(lookup="java:app/jdbc/primary")
-	DataSource ds;
-	
-	
-	@Produces
-	public DataSource getDatasource() {
-		return ds;
-	}
-	
-}
-----
