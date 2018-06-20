@@ -5,12 +5,13 @@
 :jbake-tags: gradle, wildfly, arquillian
 :jbake-status: draft
 
-In this post I would like to outline how to build a self-contained Java EE application (WAR) that uses JPA via custom JDBC-driver but with zero application-server configuration/customizing. I will be using Java EE 8-compliant application-servers but that does not mean it is a new feature. I will work in the same way on Java EE 7.
+In this post I would like to outline how to build a self-contained Java EE application (WAR) that uses JPA via custom JDBC-driver but with zero application-server configuration/customizing.
+I will be using Java EE 8-compliant application-servers but that does not mean it is a new feature. I will work in the same way on Java EE 7.
 
 To achieve our goal, I will leverage a feature of Java EE 7 that I always found interesting but never used due to it's limitations: `@DatasourceDefinition`.
-It is a way of declaring a datasource within your application via annotation, instead of having to configure it outside the application in via non-portable configurations-scripts for the application-server of your choice.
+It is a way of declaring a datasource and connection-pool within your application via annotation; instead of having to configure it outside the application via non-portable configurations-scripts for the application-server of your choice.
 E.g. on JBoss you would usually configure your datasource in the `standalone.xml`; either directly or via a JBoss .cli-script.
-Below you find an annotation that you can use within your application to define a datasource in a portable way:
+Below you find an exmaple how you can define a datasource via annotation in your Java EE app in a portable way:
 
 [source, java]
 ----
@@ -24,8 +25,9 @@ Below you find an annotation that you can use within your application to define 
         databaseName = "postgres")
 ----
 
-To me, this was never super useful because you hard-code your database-credentials. This made it not applicable in any a lot of use-cases that go beyond a small proof-of-concept app.
-Until, a twitter-discussion lead me to realize that at least Wildfly and Payara come with vendor-specific features to do variable-replaments in the annotation-values.
+To me, this was never super useful because you hard-code your database-credentials. There has been a link:https://github.com/javaee/javaee-spec/blob/master/download/password-aliasing-ee7-proposal.pdf[proposal for Java EE 7] to support password-aliasing, but it never made it into the spec.
+For this reason, I never used it except for very small applications and proof-of-concepts.
+Until now, when a twitter-discussion lead me to realize that at least Wildfly and Payara come with vendor-specific features to do variable-replaments in the annotation-values.
 
 But lets start from the beginning.
 
