@@ -1,17 +1,18 @@
-= Self-Contained Java EE applications with JDBC
+= Building Self-Contained and Configurable Java EE Applications
 .
-2018-06-14
+2018-06-22
 :jbake-type: post
-:jbake-tags: gradle, wildfly, arquillian
+:jbake-tags: wildfly, payara, javaee
 :jbake-status: draft
 
-In this post I would like to outline how to build a self-contained Java EE application (WAR) that uses JPA via custom JDBC-driver but with zero application-server configuration/customizing.
-I will be using Java EE 8-compliant application-servers but that does not mean it is a new feature. I will work in the same way on Java EE 7.
+In this post I would like to outline how to build a self-contained Java EE application (WAR), including JPA via custom JDBC-driver, but with zero application-server configuration/customizing.
+The goal is to drop the Java EE application into a vanilla application-server. Zero configuration outside the WAR-archive.
+I will be using the latest Java EE 8-compliant application-servers but that does not mean you cannot use a Java EE 7-compliant server.
 
-To achieve our goal, I will leverage a feature of Java EE 7 that I always found interesting but never used due to it's limitations: `@DatasourceDefinition`.
-It is a way of declaring a datasource and connection-pool within your application via annotation; instead of having to configure it outside the application via non-portable configurations-scripts for the application-server of your choice.
-E.g. on JBoss you would usually configure your datasource in the `standalone.xml`; either directly or via a JBoss .cli-script.
-Below you find an exmaple how you can define a datasource via annotation in your Java EE app in a portable way:
+To achieve our goal, I will be leveraging a feature of Java EE 7 that I always found interesting but did not use very often due to it's limitations: `@DatasourceDefinition`.
+It is a way of declaring a datasource and connection-pool within your application via annotation; instead of having to configure it outside the application via non-portable configuration-scripts for the application-server of your choice.
+E.g. on JBoss you would usually configure your datasource in the `standalone*.xml`; either directly or via a JBoss .cli-script.
+Below you find an example how to define a datasource via annotation in a portable way:
 
 [source, java]
 ----
@@ -25,15 +26,17 @@ Below you find an exmaple how you can define a datasource via annotation in your
         databaseName = "postgres")
 ----
 
-To me, this was never super useful because you hard-code your database-credentials. There has been a link:https://github.com/javaee/javaee-spec/blob/master/download/password-aliasing-ee7-proposal.pdf[proposal for Java EE 7] to support password-aliasing, but it never made it into the spec.
-For this reason, I never used it except for very small applications and proof-of-concepts.
-Until now, when a twitter-discussion lead me to realize that at least Wildfly and Payara come with vendor-specific features to do variable-replaments in the annotation-values.
+To me, this was seldom useful because you hard-code your database-credentials. There has been a link:https://github.com/javaee/javaee-spec/blob/master/download/password-aliasing-ee7-proposal.pdf[proposal for Java EE 7] to support password-aliasing, but it never made it into the spec.
+In the past, I only used it for small applications and proof-of-concepts.
 
+Until now! A twitter-discussion lead me to realize that at least Wildfly and Payara come with vendor-specific features to do variable-replaments in the annotation-values.
 But lets start from the beginning.
+
+
 
 == Datasource-definition and JPA
 
-Below you find a defintion and a producer for a datasource within your application:
+Below you find a useful pattern to define and a produce a datasource within your application:
 
 [source, java]
 ----
@@ -62,7 +65,7 @@ public class DatasourceProducer {
 
 The `@DatasourceDefinition` annotation is sufficient here to bind the datasource for PostgreSQL under the global JNDI-name `java:app/jdbc/primary`.
 
-The useage of `@Resource` and `@Produces` is just additional code that exposes the datasource and makes it injectable in other managed beans via `@Inject Datasource ds`.
+The usage of `@Resource` and `@Produces` is just additional code that exposes the datasource and makes it injectable in other managed beans via `@Inject Datasource ds`.
 But for JPA, this is not needed. What we need is a `persistence.xml` that uses the same JNDI-name:
 
 [source, xml]
@@ -84,11 +87,9 @@ But for JPA, this is not needed. What we need is a `persistence.xml` that uses t
 
             <property name="eclipselink.logging.level.sql" value="FINE" />
             <property name="eclipselink.logging.level" value="FINE" />
-            <property name="eclipselink.logging.level.cache" value="FINE" />
 
             <property name="hibernate.show_sql" value="true" />
             <property name="hibernate.format_sql" value="true" />
-            <!--property name="hibernate.generate_statistics" value="true" /-->
         </properties>
     </persistence-unit>
 </persistence>
@@ -99,10 +100,11 @@ From here on, it is plain JPA: Define some entity and inject the EntityManager v
 == Packaging of the JDBC-driver
 
 You might have noticed that the `@DataSourceDefinition` references the JDBC-driver-class `org.postgresql.xa.PGXADataSource`.
-Obviously, it has the available for the application to connect to the database.
-This can be done by placing the JDBC-driver in the application-server; e.g. under Wildfly, you register the JDBC-driver as a module.
+Obviously, it has to be available for the application so it can connect to the database.
+This can be achieved by placing the JDBC-driver in the application-server. E.g. under Wildfly, you register the JDBC-driver as a module.
 But what we want is a self-contained application where the JDBC-driver is coming with the application.
-This is very simple to achieve. Just add a runtime-dependency to to the JDBC-driver. In Gradle, this is done in your `build.gradle`:
+This is very simple to achieve by adding a runtime-dependency to to the JDBC-driver. You favorite build-tool should support it.
+In Gradle, it is done like this:
 
 [source, groovy]
 ----
@@ -115,8 +117,9 @@ dependencies {
 == Dynamic Configuration
 
 What we have now is a self-contained Java EE application-archive (WAR) but the connection to the database and the credentials are hard-coded in the annotation-properties.
-To make this really useful, we have to be able to overwrite this values for each deployment.
-This is supported in a non-portable way by different vendors and asking the right people on Twitter lead me to the correct documentation.
+To make this really useful, we have to be able to overwrite this values for each stage and deployment. I.e. the database-credentials to the QA-environment's database will be different than for production.
+Unfortunately, there is no portable/standard way. But if you are willing to commit to a specific application-server, it is possible.
+A Twitter-discussion lead me to the documentation for Payara and Wildfly both supporting this feature in some way.
 
 === Payara
 
@@ -153,10 +156,15 @@ cd jee-samples/datasource-definition/cars
 docker-compose -f docker-compose.payara.yml up
 ----
 
-You will find the environment variables beeing set in the `docker-compose.payara.yml`.
+When the server is started, you can send below request to create a new row in the database:
+
+----
+curl -i -X POST -d '{"model": "tesla"}' -H "Content-Type: application/json" http://localhost:8080/cars/resources/cars
+----
+
+If you are wondering where the values like `${ENV=DB_USER}` are set, check the link:https://github.com/38leinaD/jee-samples/blob/master/datasource-definition/cars/docker-compose.payara.yml[docker-compose.payara.yml].
 
 === Widlfly
-
 
 ++++
 <blockquote class="twitter-tweet" data-conversation="none" data-lang="en"><p lang="en" dir="ltr">For WildFly, see annotation-property-replacement here: <a href="https://t.co/UCGVlNVJkj">https://t.co/UCGVlNVJkj</a></p>&mdash; OmniFaces (@OmniFaces) <a href="https://twitter.com/OmniFaces/status/1006631897034829824?ref_src=twsrc%5Etfw">June 12, 2018</a></blockquote>
@@ -165,7 +173,7 @@ You will find the environment variables beeing set in the `docker-compose.payara
 
 For Wildfly, you can find it under "Annotation Property Replacement" in the link:https://docs.jboss.org/author/display/WFLY/Subsystem+configuration[admin-guide].
 
-Firstly, we have to enable the variable-replacement feature, which is not the case by default:
+First, we have to enable the variable-replacement feature in the `standalone*.xml`; which is not the case by default.
 
 [source,xml]
 ----
@@ -175,7 +183,7 @@ Firstly, we have to enable the variable-replacement feature, which is not the ca
 </subsystem>       
 ----
 
-So, technically, we still hava to modify the application-server in the `standalone.xml` in this case.
+So, technically, we still hava to modify the application-server in the `standalone*.xml` in this case.
 
 But then, you can use annotation-properties in the format `${<environment-variable>:<default-value>}`:
 
@@ -193,8 +201,7 @@ But then, you can use annotation-properties in the format `${<environment-variab
     maxPoolSize = 50)
 ----
 
-If you run this, you will notice the following exception:
-
+If you try this, you will notice the following exception:
 
 ----
 Caused by: org.postgresql.util.PSQLException: FATAL: role "${DB_USER:postgres}" does not exist
@@ -212,13 +219,10 @@ Caused by: org.postgresql.util.PSQLException: FATAL: role "${DB_USER:postgres}" 
 	at org.postgresql.xa.PGXADataSource.getXAConnection(PGXADataSource.java:48)
 	at org.jboss.jca.adapters.jdbc.xa.XAManagedConnectionFactory.getXAManagedConnection(XAManagedConnectionFactory.java:515)
 	... 133 more
-
 ----
 
-
-
-https://issues.jboss.org/browse/WFLY-10581
-
+It seems there is a link:https://issues.jboss.org/browse/WFLY-10581[bug] in the latest Wildfly that does not allow to use variables for the user/password properties.
+For now, we will continue with user and password beeing hardcoded and only the serverName and databaseName as dyanmic values:
 
 [source, java]
 ----
@@ -234,26 +238,32 @@ https://issues.jboss.org/browse/WFLY-10581
     maxPoolSize = 50)
 ----
 
+This works without any issues if the defaults match your environment. Explicitly overwriting these values can be achived via Java's system-properties. E.g `-DDB_SERVERNAME=postgres1` on the commandline.
+See link:https://github.com/38leinaD/jee-samples/blob/master/datasource-definition/cars/docker-compose.wildfly.yml[docker-compose.wildfly.yml] for a complete example.
+Before you can run this Wildfly-setup in the demo-application, you need to comment in the right annotation in link:https://github.com/38leinaD/jee-samples/blob/master/datasource-definition/cars/src/main/java/de/dplatz/cars/business/entity/DatasourceProducer.java[DatasourceProducer.java]. The default setup is for Payara.
+
 === Liberty
 
-Liberty does not have it yet, but there is an link:https://github.com/OpenLiberty/open-liberty/issues/3963[issue] for it:
-+
+Liberty does not have support for variables yet, but there is interest and an link:https://github.com/OpenLiberty/open-liberty/issues/3963[issue] has been filed:
+
 ++++
 <blockquote class="twitter-tweet" data-conversation="none" data-cards="hidden" data-lang="en"><p lang="en" dir="ltr">No, interesting idea so I raised an issue: <a href="https://t.co/hAvZnU8opO">https://t.co/hAvZnU8opO</a></p>&mdash; Alasdair (@nottycode) <a href="https://twitter.com/nottycode/status/1006940822183596033?ref_src=twsrc%5Etfw">June 13, 2018</a></blockquote>
 <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 ++++
 
-
-
 == Conclusion
 
-This is a powerful mechanism. If you wanted, you could even make the `className` dynamic and package multiple JDBC-drivers.
-Hopefully standardized in the future.
+If you make a choice for either Payara or Wildfly, you are able to build a truely self-contained Java EE application.
+We have seen how to achive this for a WAR-archive leveraging JPA or plain JDBC. The JDBC-driver is contained within the WAR-archive and configuration for the datasources can be inject from the outside via environment variables or Java system-properties.
 
-JBoss
-+ has defaults
+Payara and Wildfly offer slightly different mechanisms and syntax.
+Payara shines because it does not require any additional application-server config.
+But we cannot specify defaults in the annotation-values and always need to provide environment-variables from the outside.
 
-Payara
-+ no conif needed (annotation-property like in JBoss)
-Payara: no defaults
+Wildfly allows to set default-values on the annotation-properties. This makes it possible to deploy e.g. in a development-environment without the need to set any environment-variables.
+A minor disadvantage is that the default configuration does not have the annotation-property-replacement enabled. So, the only vendor-specific config that is required is the enabling of this feature.
+Also, currently this mechanism is riddled by a bug. Overwriting the user/password is not working currently.
 
+With this, both application-servers offer a useful feature for cloud-native applications. Unfortunately, you have to decide for a specific application-server to leverage it.
+But standardization-efforts are already on their way. The above discussion on Twitter has already been brought over to the link:https://dev.eclipse.org/mhonarc/lists/jakarta.ee-community/msg00482.html[Jakarta EE mailing-list].
+Feel free to join the discussion if you think this is a useful feature and should be standardized.
