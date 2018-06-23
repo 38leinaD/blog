@@ -1,4 +1,4 @@
-= Checkstyke with Gradle
+= Checkstyle with Gradle
 .
 2018-01-30
 :jbake-type: post

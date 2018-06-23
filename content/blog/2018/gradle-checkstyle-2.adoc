@@ -1,0 +1,39 @@
+= Checkstyle Configuration from External JAR
+.
+2018-06-23
+:jbake-type: post
+:jbake-tags: gradle
+:jbake-status: published
+
+In link:/blog/2018/gradle-checkstyle.html[a previous post] I have described the minimal configuration to get checkstyle working with Gradle.
+What i did not like, is that I have to place the `checkstyle.xml` in my project.
+Assuming I stick with the standard checkstyle.xml from Google or Sun (or I have a corporate one), I do no want to place it in each and every repo.
+
+What I found now is that Gradle supports referencing resources from within published artifacts.
+In the below configuration, the `google_checks.xml` is referenced from the published artifact `com.puppycrawl.tools:checkstyle:8.10.1` directly.
+
+
+[source, groovy]
+----
+apply plugin: 'checkstyle'
+
+configurations {
+    checkstyleConfig
+}
+def versions = [
+    checkstyle: '8.10.1',
+]
+dependencies {
+    checkstyleConfig ("com.puppycrawl.tools:checkstyle:${versions.checkstyle}") {
+        transitive = false
+    }
+}
+checkstyle {
+    showViolations = true
+    ignoreFailures = false
+    toolVersion = "${versions.checkstyle}"
+    config = resources.text.fromArchiveEntry(configurations.checkstyleConfig, 'google_checks.xml')
+}
+----
+
+The example is derived from the link:https://docs.gradle.org/2.2/release-notes.html?_ga=2.142488496.32325457.1529731928-846849620.1527763678#sharing-configuration-files-across-builds[offical gradle docs].
