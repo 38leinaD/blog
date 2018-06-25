@@ -1,11 +1,11 @@
 = Building Self-Contained and Configurable Java EE Applications
 .
-2018-06-22
+2018-06-25
 :jbake-type: post
 :jbake-tags: wildfly, payara, javaee
-:jbake-status: draft
+:jbake-status: published
 
-In this post I would like to outline how to build a self-contained Java EE application (WAR), including JPA via custom JDBC-driver, but with zero application-server configuration/customizing.
+In this post I would like to outline how to build a self-contained Java EE application (WAR), including JPA via a custom JDBC-driver, but with zero application-server configuration/customizing.
 The goal is to drop the Java EE application into a vanilla application-server. Zero configuration outside the WAR-archive.
 I will be using the latest Java EE 8-compliant application-servers but that does not mean you cannot use a Java EE 7-compliant server.
 
@@ -31,8 +31,6 @@ In the past, I only used it for small applications and proof-of-concepts.
 
 Until now! A twitter-discussion lead me to realize that at least Wildfly and Payara come with vendor-specific features to do variable-replaments in the annotation-values.
 But lets start from the beginning.
-
-
 
 == Datasource-definition and JPA
 
@@ -266,4 +264,4 @@ Also, currently this mechanism is riddled by a bug. Overwriting the user/passwor
 
 With this, both application-servers offer a useful feature for cloud-native applications. Unfortunately, you have to decide for a specific application-server to leverage it.
 But standardization-efforts are already on their way. The above discussion on Twitter has already been brought over to the link:https://dev.eclipse.org/mhonarc/lists/jakarta.ee-community/msg00482.html[Jakarta EE mailing-list].
-Feel free to join the discussion if you think this is a useful feature and should be standardized.
+Feel free to join the discussion if you think this is a useful feature that should be standardized.
