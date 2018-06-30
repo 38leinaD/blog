@@ -56,7 +56,7 @@ task integrationTest(type: Test) {
 
 Run it with `gradle integrationTest`.
 
-If you are wondering what other containers are supported and can be provided via the `@ChameleonTarget`-annotation. See link:https://github.com/arquillian/arquillian-container-chameleon#supported-containers[here] for the list.
+If you are wondering what other containers are supported and can be provided via the `@ChameleonTarget`-annotation, see link:https://github.com/arquillian/arquillian-container-chameleon#supported-containers[here] for the list.
 The actual config of supported containers is located in a file called link:https://github.com/arquillian/arquillian-container-chameleon/blob/master/arquillian-chameleon-container-model/src/main/resources/chameleon/default/containers.yaml[containers.yaml].
 
 == Conclusion

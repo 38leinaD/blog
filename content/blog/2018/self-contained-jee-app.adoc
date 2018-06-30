@@ -34,7 +34,7 @@ But lets start from the beginning.
 
 == Datasource-definition and JPA
 
-Below you find a useful pattern to define and a produce a datasource within your application:
+Below you find a useful pattern to define and produce a datasource within your application:
 
 [source, java]
 ----
@@ -100,7 +100,7 @@ From here on, it is plain JPA: Define some entity and inject the EntityManager v
 You might have noticed that the `@DataSourceDefinition` references the JDBC-driver-class `org.postgresql.xa.PGXADataSource`.
 Obviously, it has to be available for the application so it can connect to the database.
 This can be achieved by placing the JDBC-driver in the application-server. E.g. under Wildfly, you register the JDBC-driver as a module.
-But what we want is a self-contained application where the JDBC-driver is coming with the application.
+But what we want is a self-contained application where the JDBC-driver is coming within the application's web-archive (WAR).
 This is very simple to achieve by adding a runtime-dependency to to the JDBC-driver. You favorite build-tool should support it.
 In Gradle, it is done like this:
 
@@ -154,7 +154,7 @@ cd jee-samples/datasource-definition/cars
 docker-compose -f docker-compose.payara.yml up
 ----
 
-When the server is started, you can send below request to create a new row in the database:
+When the server is started, you can send below request to create a new row in a database-table:
 
 ----
 curl -i -X POST -d '{"model": "tesla"}' -H "Content-Type: application/json" http://localhost:8080/cars/resources/cars
@@ -163,6 +163,8 @@ curl -i -X POST -d '{"model": "tesla"}' -H "Content-Type: application/json" http
 If you are wondering where the values like `${ENV=DB_USER}` are set, check the link:https://github.com/38leinaD/jee-samples/blob/master/datasource-definition/cars/docker-compose.payara.yml[docker-compose.payara.yml].
 
 === Widlfly
+
+So, how about Wildfly?
 
 ++++
 <blockquote class="twitter-tweet" data-conversation="none" data-lang="en"><p lang="en" dir="ltr">For WildFly, see annotation-property-replacement here: <a href="https://t.co/UCGVlNVJkj">https://t.co/UCGVlNVJkj</a></p>&mdash; OmniFaces (@OmniFaces) <a href="https://twitter.com/OmniFaces/status/1006631897034829824?ref_src=twsrc%5Etfw">June 12, 2018</a></blockquote>
@@ -199,7 +201,7 @@ But then, you can use annotation-properties in the format `${<environment-variab
     maxPoolSize = 50)
 ----
 
-If you try this, you will notice the following exception:
+If you try this, you might notice the following exception:
 
 ----
 Caused by: org.postgresql.util.PSQLException: FATAL: role "${DB_USER:postgres}" does not exist
@@ -260,7 +262,7 @@ But we cannot specify defaults in the annotation-values and always need to provi
 
 Wildfly allows to set default-values on the annotation-properties. This makes it possible to deploy e.g. in a development-environment without the need to set any environment-variables.
 A minor disadvantage is that the default configuration does not have the annotation-property-replacement enabled. So, the only vendor-specific config that is required is the enabling of this feature.
-Also, currently this mechanism is riddled by a bug. Overwriting the user/password is not working currently.
+Also, currently this mechanism is riddled by a bug. Overwriting the user/password is not working at the time of writing.
 
 With this, both application-servers offer a useful feature for cloud-native applications. Unfortunately, you have to decide for a specific application-server to leverage it.
 But standardization-efforts are already on their way. The above discussion on Twitter has already been brought over to the link:https://dev.eclipse.org/mhonarc/lists/jakarta.ee-community/msg00482.html[Jakarta EE mailing-list].
