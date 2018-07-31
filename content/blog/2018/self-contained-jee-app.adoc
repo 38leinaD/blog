@@ -267,3 +267,14 @@ Also, currently this mechanism is riddled by a bug. Overwriting the user/passwor
 With this, both application-servers offer a useful feature for cloud-native applications. Unfortunately, you have to decide for a specific application-server to leverage it.
 But standardization-efforts are already on their way. The above discussion on Twitter has already been brought over to the link:https://dev.eclipse.org/mhonarc/lists/jakarta.ee-community/msg00482.html[Jakarta EE mailing-list].
 Feel free to join the discussion if you think this is a useful feature that should be standardized.
+
+== Post Mortem
+
+Some time after writing this article, I notices that the OmniFaces library comes with a nice workaround via a wrapper datasource that reads all the wrapped datasource's configuration from a config-file.
+
+++++
+<blockquote class="twitter-tweet" data-conversation="none" data-lang="en"><p lang="en" dir="ltr">data-source in web.xml or @DataSourceDefinition on a class, then use property replacements for some of the attributes (${name} syntax), or without property replacement but with wrapper datasource:<a href="https://t.co/bMWedsyI0r">https://t.co/bMWedsyI0r</a></p>&mdash; OmniFaces (@OmniFaces) <a href="https://twitter.com/OmniFaces/status/1022473299819986944?ref_src=twsrc%5Etfw">July 26, 2018</a></blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+++++
+
+Arjan Tijms, who is one of the creators of the library, has described the implementation in detail on link:http://jdevelopment.nl/switching-data-sources-datasourcedefinition/[his blog].
