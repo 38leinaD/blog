@@ -1,4 +1,4 @@
-= KumuluzEE for Standalone JavaEE Microservices
+= KumuluzEE for Standalone Java EE Microservices
 .
 2018-09-09
 :jbake-type: post
@@ -18,12 +18,14 @@ You can find the final version of the project in my link:https://github.com/38le
 
 As the generated artifact is an Uber-Jar and no WAR-file, change the packaging-type to 'jar'.
 
+[source,xml]
 ----
 <packaging>jar</packaging>
 ----
 
 Add the dependencies to KumuluzEE and remove the dependency to the Java EE APIs (they will be transitively included). This is already what I don't like at all: I will have to fiddle with and include each Java EE spec individually; no way to just depend on all parts of the spec.
 
+[source,xml]
 ----
 <dependencies>
     <dependency>
@@ -103,7 +105,6 @@ As the application is packaged as a JAR-file and not as WAR, there is a differen
                 └── WEB-INF
                     ├── faces-config.xml
                     └── web.xml
-
 ----
 
 I also had to remove the usage of EJB's as they are not available in KumuluzEE; which is understandable as it is a big specification and is step-by-step replaced by CDI-based mechanisms like `@Transactional`.
