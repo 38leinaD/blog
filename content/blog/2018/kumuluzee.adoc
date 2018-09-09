@@ -1,0 +1,118 @@
+= KumuluzEE for Standalone JavaEE Microservices
+.
+2018-09-09
+:jbake-type: post
+:jbake-tags: javaee
+:jbake-status: published
+
+I have to admit that I have never been too excited about frameworks like KumuluzEE, Thorntail (previously Wildfly Swarm), Payara Micro, etc.. Regular application-servers that offer a seperation between platform and application-logic feel more natural; even more so now with Docker as it can reduce the image-size significantly.
+
+But in certain situation I can see that it is useful to have a standalone Java application which can be started with `java -jar` instead of requiring an application-server. Due to this reason, I felt the need to give these frameworks/platforms a try.
+
+In this post, I would like to start with link:https://ee.kumuluz.com/[KumuluzEE] which advertises the easy migration of Java EE applications to cloud-native microservices on it's website. The advantage, like with Thorntail, to me is that I can code against the regular Java EE APIs and thus do not have to learn a new framework.
+
+Below, I will describe the main things that need to be done to a Maven-based Java EE project to migrate it to KumuluzEE.
+You can find the final version of the project in my link:https://github.com/38leinaD/jee-samples/tree/master/kumuluzee[Git repo].
+
+== Steps
+
+As the generated artifact is an Uber-Jar and no WAR-file, change the packaging-type to 'jar'.
+
+----
+<packaging>jar</packaging>
+----
+
+Add the dependencies to KumuluzEE and remove the dependency to the Java EE APIs (they will be transitively included). This is already what I don't like at all: I will have to fiddle with and include each Java EE spec individually; no way to just depend on all parts of the spec.
+
+----
+<dependencies>
+    <dependency>
+        <groupId>com.kumuluz.ee</groupId>
+        <artifactId>kumuluzee-core</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>com.kumuluz.ee</groupId>
+        <artifactId>kumuluzee-servlet-jetty</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>com.kumuluz.ee</groupId>
+        <artifactId>kumuluzee-jsp-jetty</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>com.kumuluz.ee</groupId>
+        <artifactId>kumuluzee-el-uel</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>com.kumuluz.ee</groupId>
+        <artifactId>kumuluzee-jax-rs-jersey</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>com.kumuluz.ee</groupId>
+        <artifactId>kumuluzee-cdi-weld</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>com.kumuluz.ee</groupId>
+        <artifactId>kumuluzee-jsf-mojarra</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>com.kumuluz.ee</groupId>
+        <artifactId>kumuluzee-jpa-eclipselink</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>com.kumuluz.ee</groupId>
+        <artifactId>kumuluzee-bean-validation-hibernate-validator</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>com.kumuluz.ee</groupId>
+        <artifactId>kumuluzee-json-p-jsonp</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>com.kumuluz.ee</groupId>
+        <artifactId>kumuluzee-jta-narayana</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>com.kumuluz.ee</groupId>
+        <artifactId>kumuluzee-microProfile-1.2</artifactId>
+    </dependency>
+</dependencies>
+<dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>com.kumuluz.ee</groupId>
+            <artifactId>kumuluzee-bom</artifactId>
+            <version>3.0.0-SNAPSHOT</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+    </dependencies>
+</dependencyManagement>
+----
+
+As the application is packaged as a JAR-file and not as WAR, there is a different structure required in the build already. Instead of having a `src/main/webapp`, you have to place it under `src/main/resources/webapp`. Also, files like `beans.xml` and `persistence.xml` have to be placed under `src/main/resources/META-INF` instead of `src/main/resources/webapp/WEB-INF`. Below you find the basic structure.
+
+----
+.
+└── src
+    └── main
+        ├── java
+        └── resources
+            ├── META-INF
+            │   └─ beans.xml
+            └── webapp
+                ├── index.xhtml
+                └── WEB-INF
+                    ├── faces-config.xml
+                    └── web.xml
+
+----
+
+I also had to remove the usage of EJB's as they are not available in KumuluzEE; which is understandable as it is a big specification and is step-by-step replaced by CDI-based mechanisms like `@Transactional`.
+
+It took me quiet some fiddeling to get the app running; one of my main issues was that I had Jersey as transitive dependency for KumuluzEE and also as a test-dependency (as a test-client to invoke the JAX-RS endpoint). The version difference influenced the versions in my Uber-Jar. In the end, I see this as a problem in Maven, but nevertheless, this would not have happend when just coding against the JavaEE API and deploying on an app-server. 
+
+Before all the Maven fiddeling, I also tried to create a KumuluzEE-compatible Uber-Jar with Gradle but gave up. I created an link:https://github.com/kumuluz/kumuluzee-samples/issues/14[issue] and move on to Maven instead.
+
+Once I had all my issues resolved, the application itself was running smoothly. Having gone through the motions once, I feel like it could be a viable alternative for developing small microservice or standalone-apps that can be sold/packaged as products but should not require the installation of an app-server.
+
+I also appreciate the availability of extensions like service discovery with Consul, access-management with KeyCloak, streaming with Kafka and full support for Microprofile 1.2. For sure, I will consider it the next time I feel the need for developing a small/standalone Java application.
+Small is relative though; creating the Uber-Jar and using CDI, JAX-RS, JSF and JPA add roughly 26 MB to the application.
