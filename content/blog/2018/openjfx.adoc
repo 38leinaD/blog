@@ -150,7 +150,7 @@ repositories {
 }
 
 dependencies {
-	// we need to depend on the platform-specific libraries of openjfx
+    // we need to depend on the platform-specific libraries of openjfx
     compile "org.openjfx:javafx-base:11:${platform}"
     compile "org.openjfx:javafx-graphics:11:${platform}"
     compile "org.openjfx:javafx-controls:11:${platform}"
@@ -185,7 +185,7 @@ run {
 }
 
 test {
-	// use junit5 engine in gradle
+    // use junit5 engine in gradle
     useJUnitPlatform()
     // log all tests
     testLogging {
