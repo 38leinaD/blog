@@ -62,7 +62,7 @@ public class HelloFX extends Application {
 }
 ----
 
-The controller is embeeded to simplify the example. It is used from within the `sample.xml` under `src/main/resources`.
+The controller is embeeded to simplify the example. It is used from within the `sample.fxml` under `src/main/resources`.
 
 [source,xml]
 ----
