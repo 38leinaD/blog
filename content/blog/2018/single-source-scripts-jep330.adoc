@@ -1,0 +1,32 @@
+= JEP 330: Launch Single-File Source-Code Programs
+.
+2018-09-24
+:jbake-type: post
+:jbake-tags: jdk-11
+:jbake-status: published
+
+Java 11 includes link:http://openjdk.java.net/jeps/330[JEP 330] which allows use Java source-files like a shell-script.
+
+Create a file named `util` with the following content:
+
+[source, java]
+----
+#!java --source 11
+
+public class Util {
+	public static void main (String[] args) {
+		System.out.println("Hello " + args[0] + "!");
+	}
+}
+----
+
+Make sure it is executable by running `chmod u+x util`.
+
+Running the script, will compile it on the fly:
+
+----
+> ./util daniel
+Hello daniel
+----
+
+As of now, editors like Visual Studio code don't recognize the file as Java files automatically. This means, code-completion and syntax hightlighting do not work without manual steps. Let's hope this gets fixed soon after the release of Java 11.
