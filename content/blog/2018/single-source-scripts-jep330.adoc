@@ -25,8 +25,8 @@ Make sure it is executable by running `chmod u+x util`.
 Running the script, will compile it on the fly:
 
 ----
-> ./util daniel
-Hello daniel
+> ./util Daniel
+Hello Daniel!
 ----
 
 As of now, editors like Visual Studio code don't recognize the file as Java files automatically. This means, code-completion and syntax hightlighting do not work without manual steps. Let's hope this gets fixed soon after the release of Java 11.
