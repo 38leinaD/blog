@@ -5,7 +5,7 @@
 :jbake-tags: jdk-11
 :jbake-status: published
 
-Java 11 includes link:http://openjdk.java.net/jeps/330[JEP 330] which allows use Java source-files like a shell-script.
+Java 11 includes link:http://openjdk.java.net/jeps/330[JEP 330] which allows to use Java source-files like  shell-scripts.
 
 Create a file named `util` with the following content:
 
