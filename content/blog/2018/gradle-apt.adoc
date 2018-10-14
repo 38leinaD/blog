@@ -1,0 +1,77 @@
+= Using Java Annotation Processors from Gradle and Eclipse
+.
+2018-10-14
+:jbake-type: post
+:jbake-tags: java gradle eclipse
+:jbake-status: published
+
+This post describes how to use/reference a Java Annotation Processor from your Gradle-based Java project. The main challenge is the usage from within Eclipse which requires some additional steps.
+
+Let's assume we want to use Google's link:https://github.com/google/auto/tree/master/service[auto-service] annotation-processor which generates `META-INF/services/` files based on annotation service-providers with `@AutoService` annoations.
+
+== Basic Setup
+
+Adjust your `build.gradle` to reference the link:https://github.com/tbroyer/gradle-apt-plugin[Gradle APT plugin] and add a dependency.
+
+[source, groovy]
+----
+plugins {
+    id "net.ltgt.apt-eclipse" version "0.18"    
+}
+
+dependencies {
+	annotationProcessor ('com.google.auto.value:auto-value:1.5')
+}
+----
+
+The plugin `net.ltgt.apt-eclipse` will also pull in `net.ltgt.apt` (which is independent of any IDE) and the standard `eclipse` plugin.
+
+The annotation-processor is now properly called during compilation if you run `gradle build`. The only problem left is how to run it from within Eclipse.
+
+== Eclipse Integration
+
+If you carefully check the link:https://github.com/tbroyer/gradle-apt-plugin/blob/master/README.md#eclipse[README.md], you will see that when using the Buildship plugin in Eclipse (which should be the default because Eclipse ships with it) you have to perform some manual steps:
+
+[quote]
+____
+When using Buildship, you'll have to manually run the eclipseJdtApt and eclipseFactorypath tasks to generate the Eclipse configuration files, then either run the eclipseJdt task or manually enable annotation processing: in the project properties → Java Compiler → Annotation Processing, check Enable Annotation Processing. Note that while all those tasks are depended on by the eclipse task, that one is incompatible with Buildship, so you have to explicitly run the two or three aforementioned tasks and not run the eclipse task.
+____
+
+What you have to do, is run the following command on your project:
+
+----
+gradle eclipseJdtApt eclipseFactorypath eclipseJdt
+----
+
+From within Eclipse, you now have to run right-click the project and select `Gradle / Refresh Gradle Project`. Afterwards, `Project / Clean`.
+With this clean build, the annotation-processor should be running.
+
+In case it does not work, you can double-check if the project was configured properly by right-clicking the project and going to `Properties / Java Compiler / Annotation Processing / Factory Path`; the `auto-value` JAR-file should be referenced here.
+
+At this point, your annotation-processor should work fine; also from within Eclipse. But in case you annotation-processor is generating Java classes, you will not see the im Eclipse because they are generated to `build/generated/sources(apt/main`.
+
+I have found two ways to deal with it.
+
+* Either, generate them to `src/main/generated` or similar in case you have some need to also check them in source-control.
++
+[source,groovy]
+----
+compileJava {
+	options.annotationProcessorGeneratedSourcesDirectory = file("${projectDir}/src/main/generated")
+}
+----
+
+* Or, make the build-subfolder a source-folder in Eclipse:
++
+[source,groovy]
+----
+eclipse {
+    classpath {
+        file.beforeMerged { cp ->
+            cp.entries.add( new org.gradle.plugins.ide.eclipse.model.SourceFolder('build/generated/source/apt/main', null) )
+        }
+    }
+}
+----
+
+In the future, I want to be able to quickly write an annotation-processor when needed. I have put a Gradle project containing a minimal annotation-processor including unit-test in link:https://github.com/38leinaD/jee-samples/tree/master/apt-example[my Github repo]. 
