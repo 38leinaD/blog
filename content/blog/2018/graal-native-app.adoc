@@ -1,0 +1,180 @@
+= Building native Java Applications with GraalVM
+.
+2018-10-20
+:jbake-type: post
+:jbake-tags: java graal
+:jbake-status: published
+
+== Introduction
+
+link:http://www.graalvm.org/[GraalVM] is an experimental JVM featuring a new Just-in-time (JIT) compiler that might some day replace HotSpot. One noteable feature is the ability to also use this JIT to build native applications that do not require a JVM to be installed on the system. It is just a native application like an `.exe` under Windows.
+
+There are other solutions that allow you to bundle your Java application as a "kind of" native app (e.g. including the JRE in some bundled form), but the native application built by GraalVM has a better performance in in regards to startup-time. Where normal Java applications are slow on startup because the JIT needs to warm up and optimize the code, the native application built by GraalVM is multiple factors of a magnitude faster. In real numbers: On my system, the below application started via `java -jar` took 200 milliseconds where the native application took 1 millisecond only.
+
+== Hello Native
+
+Here are the steps to build and run a simple commandline-app via GraalVM. 
+
+IMPORTANT: You need to have the native devlopment-tools of your OS installed. For me on CentOS, this is:
+
+* glibc-devel
+* zlib-devel
+* gcc
+* glibc-static
+* zlib-static
+
+Now the steps:
+
+. Get link:http://www.graalvm.org/[GraalVM]. I use link:https://sdkman.io/[SDKMan] to download and manage my Java versions. Simply run:
++
+----
+sdk install java 1.0.0-rc7-graal
+----
++
+SDKMan will ask if it should set graal as the default Java-version. I would not do so; rather, set it manually in the current shell:
++
+----
+export JAVA_HOME=/home/daniel/.sdkman/candidates/java/1.0.0-rc7-graal
+export PATH="$JAVA_HOME/bin:$PATH"
+----
+. Create a simple Java-project; e.g. via Gradle:
++
+----
+mkdir graal-native && cd graal-native
+gradle init --type java-application
+----
+. Build the jar via Gradle:
++
+----
+gradle build
+----
+. Build the native image/application with `native-image` utility from GraalVM.
++
+----
+native-image \
+    -cp build/libs/graal-native.jar \
+    -H:+ReportUnsupportedElementsAtRuntime \
+    --static --no-server App
+----
++
+Note that the gradle-build built the standard Jar to `build/libs/graal-native.jar`. Also, the fully qualified class-name of the class with the main-method is `App`.
+. A native executable with the same classname (only lower-case) should have been built. Run it with `./app`.
+
+== Reflective access
+
+Building a native image from your Java-application will limit the ability to use reflection. Read this for the link:https://github.com/oracle/graal/blob/master/substratevm/REFLECTION.md[limitations] of GraalVM and where a special JSON-file with metadata is required.
+
+Let's create a small example in the App class:
+
+[source, java]
+----
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
+public class App {
+	public String getGreeting() {
+		return "Hello world.";
+	}
+
+	public static void main(String[] args) {
+		App app = new App();
+		try {
+			Method greetMethod = App.class.getMethod("getGreeting", new Class[] {});
+			System.out.println(greetMethod.invoke(app, new Object[] {}));
+		} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException
+				| InvocationTargetException e) {
+			System.err.println("Something went wrong...");
+			e.printStackTrace();
+		}
+
+	}
+}
+----
+
+Building the JAR and creating a native-image should work like before. Running the app, should also work due to the _Automatic detection_ feature.
+It works, because the compiler can intercept the reflection-calls and replace them with the native calls because `getGreeting` is a constant String.
+
+Let's see if it will still work when we provide the method-name as a commandline-argument to the application:
+
+[source, java]
+----
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
+public class App {
+	public String getGreeting() {
+		return "Hello world.";
+	}
+
+	public static void main(String[] args) {
+		String methodName = args[0];
+		System.out.println("Method accessed reflectively: " + methodName);
+
+		App app = new App();
+		try {
+			Method greetMethod = App.class.getMethod(methodName, new Class[] {});
+			System.out.println(greetMethod.invoke(app, new Object[] {}));
+		} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException
+				| InvocationTargetException e) {
+			System.err.println("Something went wrong...");
+			e.printStackTrace();
+		}
+
+	}
+}
+----
+
+We build the native image like before. But running the app will fail:
+
+----
+> ./app getGreeting
+Method accessed reflectively: getGreeting
+Something went wrong...
+java.lang.NoSuchMethodException: App.getGreeting()
+	at java.lang.Throwable.<init>(Throwable.java:265)
+	at java.lang.Exception.<init>(Exception.java:66)
+	at java.lang.ReflectiveOperationException.<init>(ReflectiveOperationException.java:56)
+	at java.lang.NoSuchMethodException.<init>(NoSuchMethodException.java:51)
+	at java.lang.Class.getMethod(Class.java:1786)
+	at App.main(App.java:15)
+	at com.oracle.svm.core.JavaMainWrapper.run(JavaMainWrapper.java:163)
+
+----
+
+Lets create a file called `reflectionconfig.json` with the necessary meta-information for the `App` class:
+
+[source, json]
+----
+[
+  {
+    "name" : "App",
+    "methods" : [
+      { "name" : "getGreeting", "parameterTypes" : [] }
+    ]
+  }
+]
+----
+
+Build the native application with the meta-data file:
+
+----
+native-image \
+    -cp build/libs/graal-native.jar \
+    -H:ReflectionConfigurationFiles=reflectionconfig.json \
+    -H:+ReportUnsupportedElementsAtRuntime \
+    --static --no-server App
+----
+
+Run the application again, and you should see it works now:
+
+----
+> ./app getGreeting
+Method accessed reflectively: getGreeting
+Hello world.
+----
+
+== Conclusion
+
+GraalVM is certainly a nice piece of research. Actually, more than that; according to link:https://chrisseaton.com/truffleruby/tenthings/[Top 10 Things To Do With GraalVM], it is used in production by Twitter.
+I will be trying out the native integration with JavaScript/NodeJS in a future post.
+As this post is mainly for my own records, I might have skimmed over some important details. You might want to read link:https://medium.com/graalvm/instant-netty-startup-using-graalvm-native-image-generation-ed6f14ff7692[this excellent article to run netty on GraalVM] for a more thorough write-up.
