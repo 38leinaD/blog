@@ -6,9 +6,9 @@
 :jbake-status: published
 
 I am currently developing a simple web-app that is most-likely only used by myself and maybe some friends.
-It is using Java EE 8 and also has a HTML/JavaScript UI that gives me the option to tinker with some modern browser-APIs like web-components, shadow-dom, etc.
+It is using Java EE 8 and also has a HTML/JavaScript UI that gives me the possibility to tinker with some modern browser-APIs like WebComponents, Shadow-DOM, etc.
 
-As I always like to use such hobby-development to try new stuff, I was looking for a simple (and cheap) way to host this application in the cloud.
+As I like to leverage such hobby-projects to also try and learn new stuff, I was looking for a simple (and cheap) way to host this application in the cloud.
 Obviously, AWS, Azure, Google Cloud would be options if my focus would be on learning something new with these cloud platforms.
 But this time I wanted to focus on the actual application and thus use something slightly more developer-friendly.
 In this post I will show how to deploy a Java EE 8 application on link:https://dashboard.heroku.com/[Heroku] using TomEE and OpenLiberty.
