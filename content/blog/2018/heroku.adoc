@@ -1,0 +1,123 @@
+= Deploying Java EE 8 Applications to Heroku
+.
+2018-11-01
+:jbake-type: post
+:jbake-tags: javaee cloud tomee
+:jbake-status: published
+
+I am currently developing a simple web-app that is most-likely only used by myself and maybe some friends.
+It is using Java EE 8 and also has a HTML/JavaScript UI that gives me the option to tinker with some modern browser-APIs like web-components, shadow-dom, etc.
+
+As I always like to use such hobby-development to try new stuff, I was looking for a simple (and cheap) way to host this application in the cloud.
+Obviously, AWS, Azure, Google Cloud would be options if my focus would be on learning something new with these cloud platforms.
+But this time I wanted to focus on the actual application and thus use something slightly more developer-friendly.
+In this post I will show how to deploy a Java EE 8 application on link:https://dashboard.heroku.com/[Heroku] using TomEE and OpenLiberty.
+
+As there are not many references on the internet that describe how to deploy Java EE applications on Heroku (specifically not an application-server-based deployment), I think this write-up might also be helpful to others.
+
+== Procfile and Fat Jar Solutions
+
+From past experience I know that Heroku makes it simple to deploy to the cloud. It integrates nicely with Git and deploying can be as simple as typing `git push heroku master`. Literally.
+Basically, you define a `Procfile` that tells heroku how to build and deploy the application. If I would want to use a fat-jar solution like PayaraMicro, Thorntail or just repackaging as a fat-jar, this would work easily. Heroku will detect popular build-systems like Maven and Gradle, build the application and the `Procfile` just needs to contain the command-line to run the Jar. See link:https://devcenter.heroku.com/articles/deploying-java[here] for the steps.
+
+This is not an option for me as I want to do the main development on a regular application-server; deploying to production with a different model then what is used in development does not sound like a great idea. Why do the main development on a regular application-server? Because the build is much fast than when it needs to download and package a 50 MB Jar-file.
+
+== Docker Container Registry
+
+As Docker playes nicely with Java EE application-servers, the next logical step is to ask if you can somehow host a Docker container on Heroku.
+And you can. They have a Docker conatainer registry where you can easily push images. Read the link:https://devcenter.heroku.com/articles/container-registry-and-runtime[steps] here.
+The "downside" for me is that it does not have such a nice workflow as you are accustomed to from Heroku. Instead of doing `git push heroku master`, you now have to build locally or on some other build-server and then you basically do a `docker push`. This can easily lead to situations where you just start fiddling around and at one point and end with a deployed container that does not respresent a specific commit. I am not saying that this has to be a big problem for a hobby-project but why not aim for a better solution?
+
+== Docker-based Build and Deploy via heroku.yml
+
+The link:https://devcenter.heroku.com/articles/docker-builds-heroku-yml[service] I finally opted for is still in public beta but promises to combine the easy workflow of `git push heroku master` with Docker.
+The idea is to use Docker for building and deploying your application. A `heroku.yml` is used to define what images to build and what containers run.
+The `heroku.yml` can look as simple as this:
+
+[source, yml]
+----
+build:
+  docker:
+    web: Dockerfile
+----
+
+INFO: Note that you can find the whole project on link:https://github.com/38leinaD/heroku-javaee-starter[my GitHub repository].
+
+This just means that during the build-stage an image named `web` will be built based on the `Dockerfile` in the root of the project. What command will be used to run it? By default, whatever is defined via `EXEC` in the `Dockerfile`.
+
+How to set up the `Dockerfile`? As it is needed to build our application (via Gradle or Maven) *and* also deploy it, link:https://docs.docker.com/develop/develop-images/multistage-build/[multi-stage builds] are the answer.
+
+----
+FROM openjdk:8-jdk-alpine as build
+COPY . /usr/src/app
+WORKDIR /usr/src/app 
+RUN ./gradlew build
+
+FROM tomee:8-jre-8.0.0-M1-plume
+COPY src/main/tomee/run_tomee.sh /usr/local/
+COPY src/main/tomee/config/server.xml /usr/local/tomee/conf/
+COPY --from=0 /usr/src/app/build/libs/heroku-javaee-starter.war /usr/local/tomee/webapps/
+CMD /usr/local/run_tomee.sh
+----
+
+In the first stage we use a plain OpenJDK-image to build our WAR-file with Gradle.
+The second stage is based on an official TomEE base-image and additionally contains the WAR-file built in the first stage.
+Note that we also package a dedicated shell-script to start TomEE; and the `server.xml` is mainly included to read the HTTP-port from an environment-variable.
+
+Heroku works in the following way: When the container is started, an environment-variable named `PORT` is defined. It is the responsibility of the application to use this port.
+For TomEE, I was only able to do this by taking the environment-variable in the Shell and then setting it as a Java system-property which is read in the `server.xml`. In contrast to this, OpenLiberty directly allows to access environment-variables in its configuration-file (which is coincidentally also called `server.xml`).
+
+I will assume that you have a general understanding how to build a Java EE WAR-file with Gradle or Maven; there is nothing special here.
+
+=== Deploy to TomEE on Heroku
+
+Now lets see how we can get this deployed to Heroku.
+
+. Create an account for Heroku, download/install the link:https://devcenter.heroku.com/articles/heroku-cli[Heroku CLI] and run `heroku login`.
+. Get the link:https://github.com/38leinaD/heroku-javaee-starter[Heroku Java EE Starter Project] from my GitHub Repo.
++
+----
+git clone https://github.com/38leinaD/heroku-javaee-starter.git
+cd heroku-javaee-starter
+----
+. Create an application at Heroku and set the Stack so we can work with Docker and the `heroku.yml`.
++
+----
+heroku create
+heroku stack:set container
+----
+. And now the only step that you will need to repeat later during development; and it is the reason why it is so nice to work with Heroku in the first place:
++
+----
+git push heroku master
+----
++
+This will push your code to Heroku and trigger the build and deployment of the application.
+. You might remember from earlier that we gave the container the name `web` in the `heroku.yml`. By convention the container with this name is automatically scaled to one instance. If you would name the container differently (let`s assume `myapp`), you need to run `heroku ps:scale myapp=1` manually. Anyway, you can check with `heroku ps` what processes/containers are running for your application.
+. If you want to see the actual stdout/log of the container starting up, you can use `heroku logs --tail`.
+. Once the application-server is started, you can run `heroku open` and it will open the URL under which your application is deployed on Heroku in your default browser.
+
+=== Deploy to OpenLiberty on Heroku
+
+What changes are needed to deploy to a different application-server? E.g. OpenLiberty?
+For one, a different `Dockerfile` that packages the WAR into an OpenLiberty container.
+The reference which `Dockerfile` is used can be found in the `heroku.yml`.
+You can simply change it to `Dockerfile.liberty` if you want to try it out.
+As already stated before, the setting of the HTTP-port from an environment-varible can easily be done from OpenLiberty's `server.xml`.
+
+To try it out, simply change the `heroku.yml` and run:
+
+----
+git add heroku.yml
+git commit -m "Deploy to OpenLiberty this time."
+git push heroku master
+----
+
+You can monitor the startup of OpenLiberty with `heroku logs --tail`.
+
+== Summary
+
+I hope it was possible for me to convience you that using Heroku for deploying Java EE application is an easy option for at least hobby-projects.
+It only takes seconds to deploy an application and share it with family, friends or testers. :-)
+
+The nice thing about integrating so nicely with Docker and Git, is that you don't have a lot of proprietary content in your project. Except for the `heroku.yml` there is nothing. If your application grows, you can easily move to AWS or another cloud-provider.
