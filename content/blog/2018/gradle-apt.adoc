@@ -48,7 +48,7 @@ With this clean build, the annotation-processor should be running.
 
 In case it does not work, you can double-check if the project was configured properly by right-clicking the project and going to `Properties / Java Compiler / Annotation Processing / Factory Path`; the `auto-value` JAR-file should be referenced here.
 
-At this point, your annotation-processor should work fine; also from within Eclipse. But in case you annotation-processor is generating Java classes, you will not see the im Eclipse because they are generated to `build/generated/sources(apt/main`.
+At this point, your annotation-processor should work fine; also from within Eclipse. But in case you annotation-processor is generating Java classes, you will not see the im Eclipse because they are generated to `build/generated/sources/apt/main`.
 
 I have found two ways to deal with it.
 
