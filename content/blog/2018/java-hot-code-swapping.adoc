@@ -1,0 +1,27 @@
+= Java Hot Code Swapping
+.
+2018-12-21
+:jbake-type: post
+:jbake-tags: java gradle eclipse
+:jbake-status: published
+
+I am constantly suprised that developers who are working with Java for years are not aware of the hot-code-swapping feature of the JVM.
+In a nutshell, when you run a Java application from within e.g. Eclipse in debug-mode (or connect to a "Remote Java Application") you are able to change the content of your methods during runtime of the application.
+You are not able to add/remove/change fields or method signatures, but you can change the content of methods.
+To me, this is a big deal and allows much fast development because enterprise applications can grow big over the years and have deployment-times of minutes instead of seconds.
+Not having to redeploy for each minor change is a huge time-saver.
+
+Unfortunately, depending on your workflow hot-code-swapping will not always work. And you might get errors like "Hot Code Replace Failed - delete method not implemented" even when you just change the content of your methods. How can this be?
+
+The problem usually is related to the usage of two different Java compilers in your workflow.
+Say, you are building and deploying your WAR-archive with Maven or Gradle from the commandline and then deploy it to your application-server (e.g. Wildfly).
+Now, you connect to the application from within Eclipsse via "Remote Debugging" and change your code.
+Most likely, on the commandline you are using an Oracle or OpenJDK for compilation whereas Eclipse is using it's own link:http://blog.deepakazad.com/2010/05/ecj-eclipse-java-compiler.html[Eclipse Compiler for Java] which can generate slightly different bytecode.
+In reality, problems often happen when your classes use lamdba expressions or anonymous inner classes. The name of the lambda methods or references to the inner classes can be different between the two compilers and during hot-code-swapping it will look to the debugger as fields or methods have been removed/added.
+
+The solution is two make sure you use the same compiler for the initial compliation and the debugger session. When working with Eclipse and Gradle, this means either
+
+* Build and deploy your application from within Eclipse via the link:https://tools.jboss.org/documentation/howto/servers_deploytolocalserver.html[Server Adapters]; this way all is compiled via ECJ.
+* Or use link:https://plugins.gradle.org/plugin/de.set.ecj[gradle-eclipse-compiler-plugin] to use ECJ also for builds from the commandline.
+
+The described approach makes sure that only ECJ is used. I have not found a way yet to do it the other way round; i.e. use javac from within Eclipse.
