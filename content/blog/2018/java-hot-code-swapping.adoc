@@ -1,11 +1,11 @@
-= Java Hot Code Swapping
+= Java Code Hot Swapping
 .
 2018-12-21
 :jbake-type: post
 :jbake-tags: java gradle eclipse
 :jbake-status: published
 
-I am constantly suprised that developers who are working with Java for years are not aware of the hot-code-swapping feature of the JVM.
+I am constantly suprised that developers who are working with Java for years are not aware of the hot-swapping-code feature of the JVM.
 In a nutshell, when you run a Java application from within e.g. Eclipse in debug-mode (or connect to a "Remote Java Application") you are able to change the content of your methods during runtime of the application.
 You are not able to add/remove/change fields or method signatures, but you can change the content of methods.
 To me, this is a big deal and allows much fast development because enterprise applications can grow big over the years and have deployment-times of minutes instead of seconds.
@@ -17,7 +17,7 @@ The problem usually is related to the usage of two different Java compilers in y
 Say, you are building and deploying your WAR-archive with Maven or Gradle from the commandline and then deploy it to your application-server (e.g. Wildfly).
 Now, you connect to the application from within Eclipsse via "Remote Debugging" and change your code.
 Most likely, on the commandline you are using an Oracle or OpenJDK for compilation whereas Eclipse is using it's own link:http://blog.deepakazad.com/2010/05/ecj-eclipse-java-compiler.html[Eclipse Compiler for Java] which can generate slightly different bytecode.
-In reality, problems often happen when your classes use lamdba expressions or anonymous inner classes. The name of the lambda methods or references to the inner classes can be different between the two compilers and during hot-code-swapping it will look to the debugger as fields or methods have been removed/added.
+In reality, problems often happen when your classes use lamdba expressions or anonymous inner classes. The name of the lambda methods or references to the inner classes can be different between the two compilers and during hot-swapping it will look to the debugger as fields or methods have been removed/added.
 
 The solution is two make sure you use the same compiler for the initial compliation and the debugger session. When working with Eclipse and Gradle, this means either
 
