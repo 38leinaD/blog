@@ -1,0 +1,41 @@
+= Arquillian Chameleon with new @GradleBuild-annotation
+.
+2018-12-23
+:jbake-type: post
+:jbake-tags: gradle, arquillian
+:jbake-status: published
+
+
+In link:/blog/2018/gradle-arquillian-chameleon-improved.html[this post] and link:/blog/2018/gradle-arquillian-chameleon-improved-again.html[this post] I have described how to Chameleon can continously simplify the usage of Arquillian.
+What still was missing is the option for Arquillian to build the artifact/WAR with Gradle itself and use it for the test/deployment.
+Some time ago I gave it a shot to implement the `@GradleBuild`-annotation similar to the existing `@MavenBuild`-annotation.
+It took some time until my commit made it into an official release-candidate; but here are the steps here is how you can use it with.
+
+The complete `build.gradle` you can find in a previous post. Here, I am only listing the updated dependencies for Chameleon:
+
+[source, groovy]
+----
+dependencies {
+    testCompile 'org.arquillian.container:arquillian-chameleon-junit-container-starter:1.0.0.CR4'
+    testCompile 'org.arquillian.container:arquillian-chameleon-gradle-build-deployment:1.0.0.CR4'
+}
+----
+
+Now you can make use of `@GradleBuild`. It will trigger the Gradle-build via the Tooling-API and use the artifact under `build/libs` as deployment for the test.
+
+[source, java]
+----
+@RunWith(ArquillianChameleon.class)
+@GradleBuild
+@ChameleonTarget(value = "wildfly:11.0.0.Final:managed")
+public class HelloServiceIT {
+
+    @Inject
+    private HelloService service;
+
+    @Test
+    public void shouldGreetTheWorld() throws Exception {
+        Assert.assertEquals("hello", service.hello());
+    }
+}
+----
