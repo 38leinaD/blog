@@ -1,0 +1,51 @@
+= "Watch and Run" shell script
+.
+2018-02-17
+:jbake-type: post
+:jbake-tags: cli shell
+:jbake-status: published
+
+I am using Python a lot lately for machine learning.
+To experiment a lot and quickly, I am using a simple shell-script that automatically runs my Python script whenever I change it.
+This is not only useful for Python but for any task that should be triggered based on a changed file. 
+
+[source, bash]
+----
+war() {
+    war_do() {
+        clear;
+        the_time=$(date +%H:%M:%S)
+        start=$(date +%s.%N)
+        # Run the command that was provided as argument
+        eval $@;
+        rc=$?
+        end=$(date +%s.%N)
+        diff=$(echo "${end} - ${start}" | bc)
+        if [ $rc -eq 0 ]; then
+            echo ""
+            echo -e "\e[2m[${the_time}]\e[0m \e[1;32m** Successful **\e[0m \e[2m(time: ${diff} seconds)\e[0m"
+        else
+            echo ""
+            echo -e "\e[2m[${the_time}]\e[0m \e[1;31m** Failed **\e[0m"
+        fi
+        sleep 1;
+    }
+    war_do $@
+    while inotifywait -qq .; do
+        war_do $@
+    done
+}
+----
+
+You have to make sure that `inotifywait` is available on your system.
+Assume you source the script in your .bashrc, you can now run below command to contiously run your Python script on each saved change:
+
+----
+war python app.py
+----
+
+Or your NodeJS script:
+
+----
+war node app.js
+----
