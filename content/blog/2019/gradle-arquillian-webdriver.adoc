@@ -1,0 +1,72 @@
+= Arquillian UI Testing from Gradle
+.
+2019-03-01
+:jbake-type: post
+:jbake-tags: arquillian, gradle
+:jbake-status: published
+
+This is an updated version of link:http://dplatz.de/blog/2018/gradle-arquillian-webdriver.html[last year's post].
+The main change is that Gradle now has native BOM-support.
+
+Lets for this post assume we want to test some Web UI that is already running somehow. I.e. we don't want to start up the container with the web-app from arquillian.
+So, make sure you have the following in your `build.gradle`:
+
+[source, groovy]
+----
+apply plugin: 'java'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+    testCompile 'junit:junit:4.12'
+
+    implementation platform('org.jboss.arquillian:arquillian-bom:1.4.1.Final')
+    testCompile "org.jboss.arquillian.junit:arquillian-junit-container"
+    testCompile "org.jboss.arquillian.graphene:graphene-webdriver:2.3.2"
+}
+----
+
+Now the test:
+
+[source, java]
+----
+@RunAsClient
+@RunWith(Arquillian.class)
+public class HackerNewsIT {
+
+    @Drone
+    WebDriver browser;
+
+    @Test
+    public void name() {
+        browser.get("https://news.ycombinator.com/");
+        String title = browser.getTitle();
+        Assert.assertThat(title, CoreMatchers.is("Hacker News"));
+    }
+
+}
+----
+
+Run with it with `gradle test`.
+
+By default, HTMLUnit will be used as the browser. To use Chrome, you can set it in the `arquillian.xml`:
+
+[source, xml]
+----
+ <arquillian xmlns="http://jboss.com/arquillian" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://jboss.org/schema/arquillian http://jboss.org/schema/arquillian/arquillian_1_0.xsd">
+
+    <extension qualifier="webdriver">
+        <property name="browser">chrome</property>
+        <!--property name="chromeDriverBinary">/home/daniel/dev/tools/chromedriver</property-->
+    </extension>
+
+</arquillian>
+----
+
+You don't need to download the chromedriver manually anymore; but you can: link:https://sites.google.com/a/chromium.org/chromedriver/WebDriver[].
