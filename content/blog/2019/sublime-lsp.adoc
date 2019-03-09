@@ -1,0 +1,53 @@
+= Sublime Text 3 for Java
+.
+2019-03-03
+:jbake-type: post
+:jbake-tags: sublime, java
+:jbake-status: published
+
+Lately, I have been suprised by the great support for Java in VSCode.
+It is based on the Language Server Protocol standard. This means, an editor only has to implement the interface to this standard. It can then provide support for intellisense, errors and more for any kind of languages if a language-server for this language comes available. There is no need for baking language-support into each editor. It is provided by the language-server backend. E.g. link:https://github.com/eclipse/eclipse.jdt.ls[Eclipse JDT] provides a language-server for Java.
+
+The integration of Java in VSCode is great and simple to use. Just follow the steps link:https://code.visualstudio.com/docs/languages/java[here].
+
+Just for my understanding, I was interested if I can get it working for Sublime Text 3.
+It requires some manual steps and not many people will choose this combination; but it is possible.
+
+First you have to get the Java Language Server.
+
+----
+git clone https://github.com/eclipse/eclipse.jdt.ls
+cd eclipse.jdt.ls
+./mvnw package
+----
+
+The built Jar can be found at `eclipse.jdt.ls/org.eclipse.jdt.ls.product/target/repository/plugins/org.eclipse.equinox.launcher_1.5.300.v20190213-1655.jar`.
+
+Next, install the link:https://packagecontrol.io/packages/LSP[LSP package] for Sublime Text.
+
+Go to `Preferences: LSP Settings` and add below config:
+
+[source, json]
+----
+{
+	"clients":
+	{
+		"jdtls":
+		{
+			"enabled": true,
+            "command": ["java", "-jar", "/home/daniel/junk/eclipse.jdt.ls/org.eclipse.jdt.ls.product/target/repository/plugins/org.eclipse.equinox.launcher_1.5.300.v20190213-1655.jar", "-configuration", "/home/daniel/junk/eclipse.jdt.ls/org.eclipse.jdt.ls.product/target/repository/config_linux"],
+            "scopes": ["source.java"],
+            "syntaxes": ["Packages/Java/Java.sublime-syntax"],
+            "languageId": "java"
+		}
+	}
+}
+
+----
+
+Note that I have put in absolute paths and you will have to replace it with yours. You not only need to set the Jar-file but also the path to a config-folder based on your platform.
+
+After this, you are ready to run `LSP: Enable Language Server Globally` and open a Maven- or Gradle-based project in Sublime. You should see syntax highlighting and intellisense for your .java-files.
+
+Note though that the usability is nothing like Eclipse or Netbeans. Not even close to VSCode. It shows that this is not a editor people use for Java development.
+Anyway, it was a nice experiment to better understand the integration between a language-client and a language-server.
