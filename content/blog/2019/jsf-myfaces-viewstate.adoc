@@ -1,4 +1,4 @@
-= Debugging JSF/MyFaces error on Websphere
+= Debugging a JSF/MyFaces error on Websphere
 .
 2019-03-11
 :jbake-type: post
@@ -20,7 +20,7 @@ I first captured the viewId to only disable partial-state-saving for my page.
 System.out.println("ViewID is " + FacesContext.getCurrentInstance().getViewRoot().getViewId());
 ----
 
-And set it like this in the `web.xml:
+And set it like this in the `web.xml`:
 
 [source, xml]
 ----
@@ -90,4 +90,4 @@ The next step was to install link:http://showcase.omnifaces.org/exceptionhandler
 </html>
 ----
 
-Now the full stacktrace of the NPE became visible. I was a null-value item in a `p:selectCheckboxMenu` (of PrimeFaces) that just made MyFaces not work properly under Websphere.
+Now the full stacktrace of the NPE became visible. It was a null-value item in a `p:selectCheckboxMenu` (of PrimeFaces) that just made MyFaces not work properly under Websphere.
