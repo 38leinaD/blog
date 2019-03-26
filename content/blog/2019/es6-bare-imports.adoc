@@ -1,0 +1,180 @@
+= How to handle S6 bare module imports for local Development
+.
+2019-03-26
+:jbake-type: post
+:jbake-tags: javascript, webcomponents
+:jbake-status: draft
+
+When prototyping a web-based application, I prefer a lightweight approach in which I just have VSCode, the latest Chrome version and link:https://www.browsersync.io/[browser-sync]. No transpiler, bundler, etc. The browser is refreshed each time I save a file and I get immediate feedback on any CSS, HTML or JavaScript changes I have made.
+
+Unfortunately, just using browser-sync does not work as soon as you want to import ES6 modules from third-party. Like, for example, link:https://lit-element.polymer-project.org/guide[lit-element].
+
+I will show in what cases ES6 imports are not working natively in the browser for external dependencies and show different mechanism to work around it for your development environment.
+
+== Problem
+
+An ES6 imports will cause problems as soon as you have bare imports. A bare import is one that you usually see when working with bundlers like Webpack: it is not a relative path to your `node_modules` but... bare.
+
+[source,javascript]
+----
+import { html, LitElement } from 'lit-element/lit-element.js';
+----
+
+And when bundling the application with e.g. Webpack, this would be working fine. But if directly run in the browser, you would see:
+
+image::https://imgur.com/2EJ5gzy[]
+
+----
+Uncaught TypeError: Failed to resolve module specifier "lit-element/lit-element.js". Relative references must start with either "/", "./", or "../".
+----
+
+NodeJS supports bare imports and its resolution but browsers do not support it as of now.
+
+Now I can try to be smart and change it to a relative import
+
+[source,javascript]
+----
+import { html, LitElement } from './lit-element/lit-element.js';
+----
+
+and make browser-sync serve files from the `node_modules` directory as follows:
+
+----
+browser-sync src node_modules -f src --cors --no-notify
+----
+
+I will get a different but similar error.
+
+----
+Uncaught TypeError: Failed to resolve module specifier "lit-html". Relative references must start with either "/", "./", or "../".
+----
+
+Even though I was no able to import `lit-element`, it is now choking on `lit-html` which is a bare import in the `lit-element` sources itself.
+So, it seems we are stuck as any external library that contains ES6 imports will fail if the imports are not first rewritten like Webpack will do.
+
+Got here and search for link:https://jakearchibald.com/2017/es-modules-in-browsers/["Bare" import specifiers aren't currently supported].
+
+== Solutions
+
+Here are the solutions I have found when my main requirement is to keep a good developer experience like I have with browser-sync alone (lean and simple).
+
+=== Unpkg.com
+
+Unpkg acts like a CDN and offers popular NPM packages via http. The nice thing is that bare imports are rewritten.
+So, changing the import to this will work fine: 
+
+[source, javascript]
+----
+import { html, LitElement } from 'https://unpkg.com/@polymer/lit-element@latest/lit-element.js?module';
+----
+
+I can now continue working with browser-sync like before:
+
+----
+browser-sync src -f src --cors --no-notify
+----
+
+The downside of this approach is that the application is not local/self-contained; I have to fetch something from the internet; which can be bad if your internet speed is slow. Actually, it will be cached; but it will hit the internet anyway for cache-validation.
+Also, this will not work if you are trying to work offline.
+
+=== Webpack
+
+As mentioned before, a bundler sloves the import problem for us by inlining or rewriting the imports.
+But I am no fan of this approach as this bundling step can slow down the turn-around time from saving the file to the browser actually reloading.
+Anyway, the steps are:
+
+
+. `npm install --save-dev webpack webpack-cli copy-webpack-plugin webpack-dev-server `
+. Create `webpack.config.js`:
++
+[source, javascript]
+----
+const path = require('path');
+const CopyPlugin = require('copy-webpack-plugin');
+
+module.exports = {
+    entry: './src/app.js',
+    mode: 'development',
+    output: {
+        path: path.resolve(__dirname, 'dist'),
+        filename: 'app.js'
+    },
+    devServer: {
+        contentBase: './dist'
+    },
+    plugins: [
+        new CopyPlugin([
+            { from: 'src/index.html', to: './' },
+            { from: 'src/style.css', to: './' },
+        ]),
+    ],
+};
+----
+. Add a script to the `package.json`: `"dev": "webpack-dev-server --open"`
+. The import can now look like this:
++
+[source, javascript]
+----
+import { html, LitElement } from 'lit-element/lit-element.js';
+----
+
+Run the dev-server with live-reload (similar to browser-sync) with `npm run dev`.
+
+After trying it for a small application and really only doing the bare minimum with Webpack, I have to say it is a viable option.
+But it requires to download some dependencies from NPM and create a `webpack.config.js`.
+
+=== Open Web Components (OWC)
+
+link:https://open-wc.org/developing/owc-dev-server.html[Open Web Components] offer a simple dev-server that does nothing more than rewrite the bar module imports to relative imports.
+
+----
+npm install --save-dev owc-dev-server
+----
+
+After trying it out, I was disappointed to find that the dev-server does not offer live-reloading.
+
+The best solution I found was to combine it with browser-sync.
+Here are the scripts I added to my `package.json`
+
+----
+"dev": "owc-dev-server | npm run watch",
+"watch": "browser-sync start -f src/ --proxy localhost:8080 --startPath src",
+----
+
+Note that `watch` is just a helper-script used by `dev`; so you have to use `npm run dev`.
+
+=== Polymer-cli
+
+The last tool I tried was Polymer-CLI.
+In the end, the approach is a mix between the previous two. It requires an additional `polymer.json` config-file and it also does not function without browser-sync.
+
+The steps are:
+
+. `npm install --save-dev polymer-cli`
+. Create `polymer.json`:
++
+[source, javascript]
+----
+{
+    "entrypoint": "src/index.html",
+    "shell": "src/app.js",
+    "npm": true
+}
+----
+. Set up scripts:
++
+[source, javascript]
+----
+"watch": "browser-sync start -f src/ --proxy localhost:8000 --startPath src",
+"dev": "polymer serve --open-path src/index.html | npm run watch"
+----
+
+See here for the link:https://github.com/Polymer/tools/issues/2134[issue] to natively support live-reload.
+
+== Summary
+
+After trying out all these options, I have to say that non is as lightweight and simple as using plain browser-sync.
+
+I can work with the Webpack and the OCW approaches. Webpack is a standard tool to learn anyway. And OCW has a lightweight dev-serverthat just rewrites the imports on the fly; no bundling step. But sadly, it does not come with live-reload out of the box and requries to combine it with browser-sync. Polymer-CLI is just to heavyweight for what I need from it (also requiring a config-file) and unpkg.com is no option as I want to be able to work offline. 
+
+As the dependency on other libraries via ES6 imports will only get more important, I am eagerly awaiting a solution. Maybe link:https://github.com/WICG/import-maps[import-maps] will the way to go.
