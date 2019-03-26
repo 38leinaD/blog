@@ -1,4 +1,4 @@
-= How to handle S6 bare module imports for local Development
+= How to handle ES6 bare module imports for local Development
 .
 2019-03-26
 :jbake-type: post
@@ -22,7 +22,7 @@ import { html, LitElement } from 'lit-element/lit-element.js';
 
 And when bundling the application with e.g. Webpack, this would be working fine. But if directly run in the browser, you would see:
 
-image::https://imgur.com/2EJ5gzy[]
+image::https://i.imgur.com/2EJ5gzy.png[]
 
 ----
 Uncaught TypeError: Failed to resolve module specifier "lit-element/lit-element.js". Relative references must start with either "/", "./", or "../".
