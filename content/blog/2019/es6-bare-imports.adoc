@@ -70,6 +70,8 @@ So, changing the import to this will work fine:
 import { html, LitElement } from 'https://unpkg.com/@polymer/lit-element@latest/lit-element.js?module';
 ----
 
+The `?module` does the magic of rewriting bare imports.
+
 I can now continue working with browser-sync like before:
 
 ----
