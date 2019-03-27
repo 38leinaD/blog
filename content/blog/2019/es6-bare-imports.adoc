@@ -5,6 +5,8 @@
 :jbake-tags: javascript, webcomponents
 :jbake-status: published
 
+NOTE: This post has been updated to also include link:https://www.pikapkg.com/blog/pika-web-a-future-without-webpack/[pikapkg]
+
 When prototyping a Javascript-based web-application, I prefer a lightweight approach in which I just have VSCode, the latest Chrome version and link:https://www.browsersync.io/[browser-sync]. No transpiler, bundler, etc. The browser is refreshed each time I save a file and I get immediate feedback on any CSS, HTML or JavaScript changes I have made.
 
 Unfortunately, just using browser-sync does not work as soon as you want to import ES6 modules from third-party. Like, for example, link:https://lit-element.polymer-project.org/guide[lit-element].
@@ -171,10 +173,43 @@ The steps are:
 
 See here for the link:https://github.com/Polymer/tools/issues/2134[issue] to natively support live-reload.
 
+== @pika/web
+
+One more nice tool was mentioned to me in the reactions to this post. So, I felt inclined to try it and after all also include it here.
+
+What `@pika/web` does, is described nicely in link:https://www.pikapkg.com/blog/pika-web-a-future-without-webpack/[this article]. It actually is a great addition to my post because it adds to the same discussion that you should not be required to use bundlers just to get all the webcomponents / ES6 goodness working.
+
+Pika moves the bundling step from where you have to run the bundler for your application, to just running a bundler/tool once for each installed dependency in your `package.json`.
+I.e. what it does is take your dependencies from `node_modules` and repackages/bundles them under the folder `web_modules`. The repackaged dependency no longer contains bare imports and can easily be include. Just run
+
+----
+npm install && npx @pika/web
+----
+
+Now, you could import like below and continue using browser-sync.
+
+----
+import { html, LitElement } from './web_modules/lit-element.js';
+----
+
+Note that I don't like having to put `web_modules` in the path. So what I ended up doing was importing like this
+
+----
+import { html, LitElement } from './lit-element.js';
+----
+
+and just let browser-sync serve from `src` and `web_modules`.
+
+----
+browser-sync src web_modules -f src --cors --no-notify
+----
+
 == Summary
 
 After trying out all these options, I have to say that non is as lightweight and simple as using plain browser-sync.
 
 I can work with the Webpack and the OCW approaches. Webpack is a standard tool to learn anyway. And OCW has a lightweight dev-serverthat just rewrites the imports on the fly; no bundling step. But sadly, it does not come with live-reload out of the box and requries to combine it with browser-sync. Polymer-CLI is just to heavyweight for what I need from it (also requiring a config-file) and unpkg.com is no option as I want to be able to work offline. 
+
+Pika was only added after I intially wrote this post. But I will keep trying it in the next way. From the first impression, I have to say that I really like that I can just continue using plain browser-sync.
 
 As the dependency on other libraries via ES6 imports will only get more important, I am eagerly awaiting a solution. Maybe link:https://github.com/WICG/import-maps[import-maps] will the way to go.
