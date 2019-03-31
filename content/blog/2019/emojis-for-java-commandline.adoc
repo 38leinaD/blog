@@ -1,0 +1,18 @@
+= How to print Emoji characters in your Java command-line application
+.
+2019-03-31
+:jbake-type: post
+:jbake-tags: java
+:jbake-status: published
+
+In general, you only have colors and font-weight to work with when you are in a regular terminal application. Using emoji chracters allows to use different visual markers than what we are noramlly used to.
+
+See below for how it works in Java:
+
+. Go to link:https://unicode.org/emoji/charts/full-emoji-list.html[this index] and find emoji to use. E.g. "Grinning Face" has UTF-16 code `U+1F600`. 
+. Go to link:http://www.fileformat.info/info/unicode/char/search.htm[fileformat.info] and query for `U+1F600`.
+. Click on the returned result and find the row "C/C++/Java source code"; which should show `"\uD83D\uDE00"`.
+. Put `System.out.println("\uD83D\uDE00")` into your Java application.
+
+If you run this application in a terminal and the font supports it, you should see the grinning face &#x1f600;. 
+
