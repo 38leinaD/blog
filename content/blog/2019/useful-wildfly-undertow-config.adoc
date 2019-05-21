@@ -1,0 +1,72 @@
+= Useful Wildfly Undertow Config
+.
+2019-05-21
+:jbake-type: post
+:jbake-tags: jboss wildfly
+:jbake-status: published
+
+Below you find two useful Wildfly configurations.
+
+== Configure server-side SSL
+
+Copy your Java Keystore to $JBOSS_HOME/standalone/configuration/server.jks and modify your standalone-full.xml:
+
+[source, xml]
+----
+<tls>
+    <key-stores>
+        <key-store name="LocalhostKeyStore">
+            <credential-reference clear-text="secret"/>
+            <implementation type="JKS"/>
+            <file path="server.jks" relative-to="jboss.server.config.dir"/>
+        </key-store>
+    </key-stores>
+    <key-managers>
+        <key-manager name="LocalhostKeyManager" key-store="LocalhostKeyStore" alias-filter="servercert">
+            <credential-reference clear-text="secret"/>
+        </key-manager>
+    </key-managers>
+    <server-ssl-contexts>
+        <server-ssl-context name="LocalhostSslContext" key-manager="LocalhostKeyManager"/>
+    </server-ssl-contexts>
+</tls>
+----
+
+[source, xml]
+----
+<subsystem xmlns="urn:jboss:domain:undertow:4.0">
+    <buffer-cache name="default"/>
+    <server name="default-server">
+        <.../>
+        <https-listener name="https" socket-binding="https" ssl-context="LocalhostSslContext" enable-http2="true"/>
+        <.../>
+    </server>
+----
+
+== Use undertow as a reverse proxy
+
+When accessing the Wildfly on http://localhost:8080/my-app, forward to 192.168.1.2 at port 8888.
+
+[source, xml]
+----
+<subsystem xmlns="urn:jboss:domain:undertow:4.0">
+    <.../>
+    <handlers>
+        <.../>
+        <reverse-proxy name="my-app-proxy">
+            <host name="localhost" outbound-socket-binding="my-app-binding" scheme="http" path="/my-app" instance-id="my-app-route"/>
+        </reverse-proxy>
+    </handlers>
+    <.../>
+</subsystem>
+----
+
+[source, xml]
+----
+<socket-binding-group name="standard-sockets" default-interface="public" port-offset="${jboss.socket.binding.port-offset:0}">
+    <.../>
+    <outbound-socket-binding name="my-app-binding">
+        <remote-destination host="192.168.1.2" port="8888" />
+    </outbound-socket-binding>
+    <.../>
+----
