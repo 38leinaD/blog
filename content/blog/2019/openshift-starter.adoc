@@ -1,0 +1,209 @@
+= JavaEE App Deployment on Openshift/Minishift
+.
+2019-06-08
+:jbake-type: post
+:jbake-tags: openshift kubernetes
+:jbake-status: draft
+
+I have been watching link:https://www.redhat.com/en/events/webinar/cloud-native-java-application-development-video-series[this free course by RedHat] to get started on OpenShift.
+This post contains my personal notes on the most important commands and concepts for later reference.
+
+== Getting started with MiniShift
+
+I already wanted to do the course a few month back on my laptop running CentOS linux; but for some reason I ran into problems installing MiniShift.
+After reinstalling my laptop with Debian, I gave it another go.
+There have been a few small problems that cost me some time along the way and I will describe them as well
+
+After installing Minishift (which is a local OpenShift cluster running in a VM), the intial steps are simple:
+
+----
+minishift start // starts the cluster
+eval $(minishift oc-env) // to connect the oc commandline-tool from OpenShift to the local cluster
+oc login -u developer // log into the OpenShift cluster via the oc commandline-tool; password can be anything non-empty
+----
+
+Essentially OpenShift runs your applications in Kubernetes (MiniShift uses minikube) and Docker; so this is what `minishift start` will boot up in a VM. Read more about it link:https://docs.okd.io/latest/minishift/using/basic-usage.html[here].
+
+You can open the OpenShift web-console with `minishift console` and log in with user `developer` and any non-empty password. We can use it later to inspect the deployed applications and see the logs of the running containers; even connecting to a shell within the container can be done via the web console.
+
+This is also a good place to introduce the concept of projects in OpenShift. Actually, there is also the concept of projects in Minishift, but with `minishift start` a default project named `minishift` is created and I usually get along with this single project quiet good.
+For the OpenShift project this is different. You should use a single project for deploying all your modules/microservices that make up your application. So, if you are working on different customer-projects, it would be natural to also define different projects in OpenShift for it.
+
+Here, I will be working with a project named `junk`. It is created and activated via
+
+----
+oc new-project junk
+----
+
+This is important later on, because Docker images we build need to be tagged with the project-name for OpenShift beeing able to use them.
+
+Also, note that once you stop and start MiniShift, the default OpenShift project might be active (check with `oc projects`) and you will have to run `oc project junk` to activate `junk`; otherwise it might happen that `oc` commands interacte with the wrong project.
+
+== Building and deploy from source via S2I and templates
+
+The most prominent approach for deploying your application on OpenShift is via Source-2-Image.
+What this means is that effectively your application is built from sources (Maven, Gradle, ...) within a Docker container. The resulting artifact (e.g. WAR-file) is then put in another Docker container (e.g. Wildfly) to start the application.
+
+Additionally, there is the concept of templates. These templates and their parameters are documented in a good way so that you basically only have the point the template to a Git Repo URL containing a Maven build. The template will do the job of building and deploying the artifact.
+
+Minishift does not come with templates for JBoss/Wildfly preinstalled. But you can easily add a JBoss EAP 7 template by running
+
+----
+oc replace --force -f https://raw.githubusercontent.com/jboss-openshift/application-templates/master/eap/eap71-basic-s2i.json
+----
+
+You can inspect the template parameters with
+
+----
+oc describe template eap71-basic-s2i
+----
+
+Lets launch a simple Maven-based JavaEE project via the JBoss EAP 7 template:
+
+----
+oc new-app --template=eap71-basic-s2i -p SOURCE_REPOSITORY_URL=https://github.com/AdamBien/microservices-on-openshift.git -p CONTEXT_DIR=micro -p SOURCE_REPOSITORY_REF=master --name=micro
+----
+
+This approach works quiet nicely, but as you would normally build your application on a Jenkins or similar build-server, the approach seems not so useful for serious projects.
+
+== Deploy via Image Streams
+
+From now on we assume the JavaEE WAR/EAR was built via Gradle/Maven on Jenkins and we only want to use OpenShift to deploy it.
+For this we can use the concept of Image Streams. Essentially, it is just another abstraction on top of Docker. 
+As tags like `latest` (or even specific versions) can be overwritten in a Docker registry, Image Streams give Docker images a handle that can be used today or tomorrow even when the version was overwritten.
+To be concrete: You deploy your application on a docker image `appserver:latest`, the Image Stream in OpenShift will make sure to always take the same Docker image for deployment even when containers are built after `latest` already points to a new image. The handle will only be updated when you proactively decide so. This allows reproduceable build/deployments and removes the level of suprise when a new deployment is pushed to production on a Friday afternoon.
+
+To demonstrate the steps, I will be using the demo repo from the course but please note that it could be any other Maven/Gradle-based project that produces a JavaEE WAR/EAR-file.
+
+----
+git clone https://github.com/AdamBien/microservices-on-openshift.git
+cd microservices-on-openshift/micro
+mvn package
+----
+
+This should have produced a `micro.war` under the `microservices-on-openshift/micro/target` folder.
+
+Lets first check what Image Streams OpenShift knows about (you can also reference images from DockerHub or your local docker registry but more on that later):
+
+----
+oc get is -n openshift
+----
+
+Let's define an application using the `wildfly` image-stream.
+
+----
+oc new-app wildfly:latest~/tmp --name=micro
+----
+
+The trick used by Adam here is to give `/tmp` or some other empty folder to the command because we don't want OpenShift to build our application. Normally, you would give the path to a Git Repo or a folder containing a `pom.xml`. In this case, OpenShift would do the build from source again.
+
+Instead, we use the `oc start-build` command and give the already built artifact:
+
+----
+oc start-build micro --from-file=target/micro.war
+----
+
+To expose the application to the outside world via a load-balancer, run
+
+----
+oc expose svc micro
+----
+
+In the web-console you should be able to go to your project and under it to `Applications/Routes`. Here you will find a link to access you applications HTTP port.
+The URL to access the Rest endpoint should look similar to this: link:http://micro-junk.192.168.42.3.nip.io/micro/resources/ping[].
+
+=== DNS issues
+
+A problem that bugged me for some time was the concept of the `nip.io` domain and that DNS servers should resolve it to the IP given as subdomain.
+It would not have been a problem if my system was set up to use e.g. the Google DNS servers. Instead, on my Debian/local network, there is some local DNS server and it was not able to resolve the `nip.io` domain.
+
+To make it work, I had to set up the Google DNS servers on my system. Namely, link:8.8.8.8[] and link:8.8.4.4[]. After this, I was able to call the Rest endpoint. 
+
+==== Local DNS
+
+For some time I also played around with a local DNS server coming as an experimental feature, but I moved away from it again because it was not really necessary.
+Anyway, below are the steps if you want to try it:
+
+----
+export MINISHIFT_ENABLE_EXPERIMENTAL=y
+minishift start
+minishift dns start
+patch /etc/resolv.conf
+----
+
+=== Deleting resources
+
+As you are playing around in OpenShift, it is often useful to start from scratch again. Actully, we should do it to demonstrate a different approach to deploy our application.
+All resources in OpenShift are labeled with the application-name (`oc get all -l app=micro`). So, in our case, we can delete our application and all its resources by running
+
+----
+oc delete all -l app=micro
+----
+
+== Image Stream from own Docker image
+
+I assume you have run the `oc delete` command because we now want to deploy our micro application again, but in a different way: deployed in a Docker container that we have built ourselfs.
+I.e. we want to use our own Docker images within OpenShift's concept of Image Streams.
+
+First, we need to connect our Docker client to the Docker runtime in MiniShift:
+
+----
+eval $(minishift docker-env)
+----
+
+Try `docker ps` now and you should see all the Docker containers running in your OpenShift environment.
+
+We can now do a `docker build` as usual; we just have to make sure to tag it correctly.
+As OpenShift exposes a Docker registry, we need to tag the image for this registry (we can get it from `minishift openshift registry`); and additionally, there is the convention that the image-name need to include the name of the OpenShift project and the application-name. So, the full build-command looks liḱe this: 
+
+----
+docker build -t $(minishift openshift registry)/junk/micro .
+docker login -u developer -p $(oc whoami -t) $(minishift openshift registry)
+docker push $(minishift openshift registry)/junk/micro 
+oc new-app --image-stream=micro
+oc expose svc micro
+oc status
+----
+
+== Important concepts
+
+Below are some more important concepts and the respective commands.
+
+=== Scale
+
+You can scale the number of replicas/containers with below command:
+
+----
+oc scale --replicas=2 dc ping
+oc get all
+----
+
+As OpenShift exposes your service via a load-balancer, this is completely transparent and you might be routed to any of the started containers.
+
+=== Configuration
+
+In Java you can access environment variables via `System.getenv`.
+This is a standard mechanism to configure you application in cloud-native applications.
+Below is the command to set such an environment variable for your service.
+
+----
+oc set env dc/ping --list
+oc set env dc/ping message='Hello World'
+----
+
+What will happen, is that OpenShift restarts all containers and places the new config in the environment.
+
+You application will now get `Hello World` when invoking `System.getenv("message")`.
+
+=== Health check
+
+Every application should define some external health-check endpoint.
+This allows external tools or e.g. OpenShift to monitor the state of the application.
+For this, Kubernetes defines two different health-checks.
+Readyness probes to test if the application is ready/started; and liveness probes to test if the application is still alive and responding.
+Below are the commands to set each. You Rest-service simply needs to respond with HTTP responce-code 200 is everything is fine; 500 in case to indicate the opposite.
+
+----
+oc set probe dc/ping --liveness --get-url=http://:8080/ping/resources/health
+oc set probe dc/ping --readiness --get-url=http://:8080/ping/resources/health
+----
