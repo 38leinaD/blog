@@ -50,6 +50,12 @@ When accessing the Wildfly on http://localhost:8080/my-app, forward to 192.168.1
 [source, xml]
 ----
 <subsystem xmlns="urn:jboss:domain:undertow:4.0">
+    <server name="default-server">
+        <host name="default-host" alias="localhost">
+             <.../>
+            <location name="/my-app" handler="my-app-proxy"/>
+        </host>
+    </server>
     <.../>
     <handlers>
         <.../>
