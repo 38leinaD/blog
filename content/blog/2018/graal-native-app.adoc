@@ -2,7 +2,7 @@
 .
 2018-10-20
 :jbake-type: post
-:jbake-tags: java graal
+:jbake-tags: java, graal
 :jbake-status: published
 
 == Introduction
@@ -22,6 +22,10 @@ IMPORTANT: You need to have the native devlopment-tools of your OS installed. Fo
 * gcc
 * glibc-static
 * zlib-static
+
+For Debian Stretch, it is:
+
+* zlib1g-dev
 
 Now the steps:
 

@@ -133,7 +133,7 @@ patch /etc/resolv.conf
 
 === Deleting resources
 
-As you are playing around in OpenShift, it is often useful to start from scratch again. Actully, we should do it to demonstrate a different approach to deploy our application.
+As you are playing around in OpenShift, it is often useful to start from scratch again. Actually, we should do it to demonstrate a different approach to deploy our application.
 All resources in OpenShift are labeled with the application-name (`oc get all -l app=micro`). So, in our case, we can delete our application and all its resources by running
 
 ----

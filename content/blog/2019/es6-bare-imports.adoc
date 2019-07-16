@@ -7,6 +7,8 @@
 
 NOTE: This post has been updated to also include link:https://www.pikapkg.com/blog/pika-web-a-future-without-webpack/[Pika]
 
+NOTE: Yet another interesting tool is link:https://jspm.org/about/introduction[jspm]. Thanks to @hallettj for mentioning it to me.
+
 When prototyping a Javascript-based web-application, I prefer a lightweight approach in which I just have VSCode, the latest Chrome version and link:https://www.browsersync.io/[browser-sync]. No transpiler, bundler, etc. The browser is refreshed each time I save a file and I get immediate feedback on any CSS, HTML or JavaScript changes I have made.
 
 Unfortunately, just using browser-sync does not work as soon as you want to import ES6 modules from third-party. Like, for example, link:https://lit-element.polymer-project.org/guide[lit-element].
