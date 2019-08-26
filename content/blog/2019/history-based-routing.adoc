@@ -1,0 +1,32 @@
+= Javascript Router-friendly packaging as WAR-archive
+.
+2019-08-26
+:jbake-type: post
+:jbake-tags: javascript, webcomponents, javaee
+:jbake-status: published
+
+A lot java-script frameworks and libraries support routing based on the browser's history API. For this, routes are usually path's similar to a Restful API. I.e. when the main route is `localhost:8080` and shows the landing page; then `localhost:8080/products/1` might show the page with the details for Product #1.
+
+link:https://vaadin.com/router[Vaadin Router] is just one example. Similar routers exist in Angular and friends.
+
+For this to work, the HTTP server needs to serve the `localhost:8080/index.html` for any of these `sub-resources`. This is because the Router in the Javascript code will deconstruct the URL and show the right page-fragments.
+
+How can this be achived in a JavaEE environment where your front-end Javascript application is packaged inside a WAR-file?
+Simple. Just use this `web.xml`:
+
+[source, xml]
+----
+<web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee
+    http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd"
+    version="3.1">
+    <welcome-file-list>
+        <welcome-file>index.html</welcome-file>
+    </welcome-file-list>
+    <error-page>
+        <error-code>404</error-code>
+    <location>/index.html</location>
+    </error-page>
+</web-app>
+----
