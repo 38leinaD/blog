@@ -5,11 +5,13 @@
 :jbake-tags: javascript, webcomponents, javaee
 :jbake-status: published
 
-A lot java-script frameworks and libraries support routing based on the browser's history API. For this, routes are usually path's similar to a Restful API. I.e. when the main route is `localhost:8080` and shows the landing page; then `localhost:8080/products/1` might show the page with the details for Product #1.
+Routers in modern Javascript framworks usually support path's similar to a Restful API. I.e. when the main page is `localhost:8080` and shows the landing page; then `localhost:8080/products/1` might show the page with the details for Product #1.
+For a single-page application an in-app link to `localhost:8080/products/1` should not trigger a reload of the whole application but should be handled within the app. This is the main job of the router.
 
+A lot of Javascript frameworks support this routing based on the browser's history API. 
 link:https://vaadin.com/router[Vaadin Router] is just one example. Similar routers exist in Angular and friends.
 
-For this to work, the HTTP server needs to serve the `localhost:8080/index.html` for any of these `sub-resources`. This is because the Router in the Javascript code will deconstruct the URL and show the right page-fragments.
+For this to work, the web-server needs to serve the `localhost:8080/index.html` for any of these sub-resources/pages. This is because the Router in the Javascript code will deconstruct the URL and show the right page-fragments.
 
 How can this be achived in a JavaEE environment where your front-end Javascript application is packaged inside a WAR-file?
 Simple. Just use this `web.xml`:
