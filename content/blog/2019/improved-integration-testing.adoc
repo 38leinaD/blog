@@ -1,13 +1,13 @@
-= Improving Integration-Testing
+= Improving on Integration-Testing (with Arquillian)
 .
-2019-09-03
+2019-09-04
 :jbake-type: post
-:jbake-tags: javaee arquillian
+:jbake-tags: jakartaee arquillian
 :jbake-status: published
 
 == Introduction
 
-link:http://arquillian.org/[Arquillian] provides a solution to run system- and integration-tests for Java EE applications.
+link:http://arquillian.org/[Arquillian] is a testing-framework for Jakarta EE applications (formerly Java EE).
 
 System-tests are run as a remote-client invoking a boundary-component of the tested application; e.g. an exposed JAX-RS/REST-endpoint.
 
@@ -17,9 +17,11 @@ Both types of tests have advantages and disadvantages where I find that the disa
 
 NOTE: You can find a good introduction on different testing-techniques and their advantages/disadvantages in link:https://blog.sebastian-daschner.com/entries/thoughts-on-efficient-testing[this article series by Sebastian Daschner].
 
-Let me explain: The Java EE applications that I am involved with are usually large, business-focused applications. This means, that I am rarely interested in testing the framework or the container. I am interested in testing how the application behaves in the correct way from a business-perspective. This can usually be done quiet nice by calling external REST endpoints. I can also have a development-setup where my application is deployed and running and I have a development-cycle that allows me to hot-swap a small code-change (e.g. via Java's remote-debugging API) and then invoke the system-test again to see if I get the expected result. Rinse and repeat.
+Let me explain: The Jakarta EE applications that I am involved with are usually large, business-focused applications. This means, that I am rarely interested in testing the framework or the container. I am interested in testing how the application behaves in the correct way from a business-perspective. This can often be done quiet nice by calling external REST endpoints. My development-cycle involves a deployed/running application that allows me to hot-swap small code-changes (e.g. via Java's remote-debugging API) and then invoke the system-test again to see if I get the expected result. Rinse and repeat.
 
-Integration-tests on the other-hand don't allow me the quick feedback cycle I get from system-tests. As the tests run in the server/application, I have to deploy a whole WAR/EAR to the app-server, run the tests and shut down the container again. If i make a change to the application-code or test, I have to repeat this rather long cycle. The cycle is especially long when the application is not very modular/loosely coupled; leading to a test-archive for deployment that has the same magnitude as the whole application. So, deployment and thus testing is slow.
+Integration-tests on the other-hand don't allow me the quick feedback cycle I get from system-tests. As the tests themselfs run in the server/application (and thus are deployed as part of the main WAR/EAR), I have to deploy a whole WAR/EAR to the app-server, run the tests and shut down the container again. If i make a change to the application-code or test, I have to repeat this rather long cycle where I do a full deployment.
+
+The cycle is especially long when the application is not very modular/loosely coupled. Arquillian theoretically allwows me to build small test-deployments with Shrinkwrap but depending on the application the test-archive often has same magnitude as the whole application. So, deployment and thus testing is slow.
 
 What I somtimes would like to have is the quick feedback-loop I get with system-tests but beeing able to test internals of the application that are not exposed via a Rest-endpoint.
 
@@ -27,7 +29,7 @@ How can we get integration-tests that behave more like system-tests? How can we 
 
 == WarpUnit
 
-I have been reading about link:https://github.com/dcm4che/WarpUnit[WarpUnit] some time ago and found the idea quiet nice. It seems to be an unmaintained prototype for a solution that basically allows you to run like a junit system-test but be able to have snippets of code (lambda expressions) that are invoked within the container on server-side. Actually, the approach even allows injection of server-components similar to Arquillian's integration-tests. Have a look at this very neet concept.
+Meet link:https://github.com/dcm4che/WarpUnit[WarpUnit]. I have been reading about it some time ago and found the idea quiet nice. It is a small testing-solution which allows you to run a system-test but be able to have snippets of code (lambda expressions) that are invoked within the container on server-side. Actually, the approach even allows injection of server-components similar to Arquillian's integration-tests. Have a look at this very neat concept.
 
 [source, java]
 ----
@@ -56,13 +58,13 @@ public class GreeterGrayBoxTest {
 ----
 
 Actually, it relies on Weld-internals at server-side but Weld is almost everywhere nowadays; at least in all the app-servers I work with on a daily basis.
-So, even though the repo did not see a commit for a year, the solution works as is if you test it with a recent Wildfly or Liberty (well, you need to be able to build it first. See link:https://github.com/dcm4che/WarpUnit/pull/1[my PR].).
+So, even though the repo did not see a commit for a long time, the solution works when you use it with a recent Wildfly or Liberty. (Actually, the maintainers invited me to contribute and I made a small pull-request to fix the build; a jboss/redhat maven repo URL had changed.)
 
 == Taking it to the next Level
 
 What I would like to have as a final solution is something that can transparently run as an Arquillian integration-test but can also be invoked like a WarpUnit-style test from outside the application-server.
 
-You can find my proof-of-concept solution link:https://github.com/38leinaD/WarpUnit/blob/feature/integration-test-poc/warpunit-examples/greeter/greeter-test/src/test/java/org/dcm4che/warpunit/examples/integration/ArquillianStyleIntegrationTest.java[here].
+You can find my proof-of-concept solution link:https://github.com/38leinaD/WarpUnit/blob/feature/integration-test-poc/warpunit-examples/greeter/greeter-test/src/test/java/org/dcm4che/warpunit/examples/integration/ArquillianStyleIntegrationTest.java[on GitHub].
 
 [source, java]
 ----
@@ -83,5 +85,5 @@ public class ArquillianStyleIntegrationTest {
 }
 ----
 
-Here, the whole `testGreeter` method is run within the application-server instead of just running some code-snippets in the server. This is a great approach while doing development and want to make quick-changes in my code or test. When I am done, the approach should allows me to just which the annotation from `@RunWith(Warp.class)` to `@RunWith(Arquillian.class)` and I am able to run it as a require arquillian integration-tests.
-Obviously, it would be nice to have a deeper arquillian integration that does not require me to change the annotation for this. Instead, it should be transparently handled by an arquillian extension.
+Here, the whole `testGreeter` method is run within the application-server instead of just running some code-snippets in the server. This is a great approach while doing development because I can make quick-changes in my test-code and rerun the test. When I am done, the approach allows me to just swtich the annotation from `@RunWith(Warp.class)` to `@RunWith(Arquillian.class)` and I am able to run it as a regular arquillian integration-tests.
+Obviously, it would be nice to have a deeper arquillian integration that does not require me to change the annotation for this. Instead, it should be transparently handled by an arquillian extension. But this is for the future; after seeing if this approach works in real-world projects.
