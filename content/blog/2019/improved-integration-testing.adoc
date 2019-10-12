@@ -57,8 +57,10 @@ public class GreeterGrayBoxTest {
 }
 ----
 
-Actually, it relies on Weld-internals at server-side but Weld is almost everywhere nowadays; at least in all the app-servers I work with on a daily basis.
-So, even though the repo did not see a commit for a long time, the solution works when you use it with a recent Wildfly or Liberty. (Actually, the maintainers invited me to contribute and I made a small pull-request to fix the build; a jboss/redhat maven repo URL had changed.)
+What happens here is that the `gate.warp()`-call will take the bytecode of our GreeterGrayBoxTest class, upload it to the server, load it via a custom class-loader and invoke the lambda within the server.
+Even though the repo did not see a commit for a long time, the solution works when you use it with a recent Wildfly or Liberty. (Actually, the maintainers invited me to contribute and I made a small pull-request to fix the build; a jboss/redhat maven repo URL had changed.)
+
+NOTE: Just found out about link:https://github.com/arquillian/arquillian-extension-warp[Arquillian Warp] which seems to follow a similar approach.
 
 == Taking it to the next Level
 
