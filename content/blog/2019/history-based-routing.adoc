@@ -32,3 +32,5 @@ Simple. Just use this `web.xml`:
     </error-page>
 </web-app>
 ----
+
+A programatic solution is to use a servlet-filter that always routes to the `index.html`. link:https://github.com/kabir/blog-quarkus-ui-development/blob/master/src/main/java/org/kabir/quarkus/ui/AngularRouteFilter.java[Here] is from the post on link:https://quarkus.io/blog/quarkus-and-web-ui-development-mode/[Quarkus and Web UI Development].
