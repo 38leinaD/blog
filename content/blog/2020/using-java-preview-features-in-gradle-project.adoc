@@ -63,7 +63,7 @@ It found it in this link:https://github.com/eclipse/eclipse.jdt.ls/pull/970[Ecli
 
 When you now run the Gradle-task `eclipseJdt` you can do a Refresh of your Gradle project in Eclipse afterwards and you should see that the Java Compiler settings in Eclipse also have been properly set.
 
-image::./blog/2020/images/eclipse-compiler-preview-features.jpg[Eclipse Compiler Settings]
+image::/blog/2020/images/eclipse-compiler-preview-features.jpg[Eclipse Compiler Settings]
 
 The ultimate goal is that we don't have to run this gradle-task manually. To achieve this, we can leverage another quiet new Buildship feature that triggers a gradle task whenever a project is imported into Eclipse or the project is refreshed. You can read about it link:https://blog.gradle.org/buildship-sync-task-exec[here].
 
