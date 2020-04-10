@@ -1,0 +1,195 @@
+= Quarkus - Understanding GraalVM native-image & Reflection on the example of XML-parsing
+.
+2020-04-10
+:jbake-type: post
+:jbake-tags: quarkus, graalvm
+:jbake-status: published
+
+A long time ago I wrote link:/blog/2018/graal-native-app.html[a post] on how to build a native-image with GraalVM.
+Lately, I have been doing the same in the context of link:https://quarkus.io[Quarkus].
+In this post I want describe what I have learned about native-image and reflection in the context of Quarkus; but not necessarily limited to Quarkus.
+
+It started with me wanting to build a native application for a simple Quarkus application that uses a JDK API for XML processing.
+I.e. it uses code like this:
+
+[source, java]
+----
+private boolean isValidXmlFile(Path p) {
+    try {
+        if (p == null) return false;
+        if (!p.toFile().exists()) return false;
+        
+        SAXParserFactory factory = SAXParserFactory.newInstance();
+        factory.setValidating(false);
+        factory.setNamespaceAware(true);
+
+        SAXParser parser = factory.newSAXParser();
+
+        XMLReader reader = parser.getXMLReader();
+        reader.parse(new InputSource(new FileInputStream(p.toFile())));
+        
+        return true;
+    }
+    catch (SAXParseException spe) {
+        return false;
+    }
+    catch (Exception e) {
+        logger.error(String.format("Error while determining if file (%s) is a valid XML-file.",  p.getFileName().toString()), e);
+        return false;
+    }
+}
+----
+
+I tried to build a native image by executing `./gradlew nativeImage` and got this error when runing the native application.
+
+----
+Exception in thread "main" javax.xml.parsers.FactoryConfigurationError: Provider com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl not found
+    at javax.xml.parsers.FactoryFinder.newInstance(FactoryFinder.java:194)
+    at javax.xml.parsers.FactoryFinder.newInstance(FactoryFinder.java:147)
+    at javax.xml.parsers.FactoryFinder.find(FactoryFinder.java:271)
+    at javax.xml.parsers.SAXParserFactory.newInstance(SAXParserFactory.java:147)
+    at de.dplatz.bpmndiff.entity.Diff.isValidXmlFile(Diff.java:122)
+    at de.dplatz.bpmndiff.entity.Diff.determineIfSupported(Diff.java:113)
+    at de.dplatz.bpmndiff.entity.Diff.ofPaths(Diff.java:95)
+    at de.dplatz.bpmndiff.entity.Diff.ofPaths(Diff.java:73)
+    at de.dplatz.bpmndiff.control.Differ.diff(Differ.java:39)
+    at de.dplatz.bpmndiff.boundary.DiffResource.diff(DiffResource.java:31)
+    at de.dplatz.bpmndiff.boundary.DiffResource_ClientProxy.diff(DiffResource_ClientProxy.zig:51)
+    at de.dplatz.bpmndiff.UICommand.call(UICommand.java:65)
+    at de.dplatz.bpmndiff.UICommand.call(UICommand.java:27)
+    at picocli.CommandLine.executeUserObject(CommandLine.java:1783)
+    at picocli.CommandLine.access$900(CommandLine.java:145)
+    at picocli.CommandLine$RunLast.executeUserObjectOfLastSubcommandWithSameParent(CommandLine.java:2150)
+    at picocli.CommandLine$RunLast.handle(CommandLine.java:2144)
+    at picocli.CommandLine$RunLast.handle(CommandLine.java:2108)
+    at picocli.CommandLine$AbstractParseResultHandler.execute(CommandLine.java:1975)
+    at picocli.CommandLine.execute(CommandLine.java:1904)
+    at de.dplatz.bpmndiff.UICommand.run(UICommand.java:55)
+    at de.dplatz.bpmndiff.UICommand_ClientProxy.run(UICommand_ClientProxy.zig:72)
+    at io.quarkus.runtime.ApplicationLifecycleManager.run(ApplicationLifecycleManager.java:111)
+    at io.quarkus.runtime.Quarkus.run(Quarkus.java:61)
+    at io.quarkus.runtime.Quarkus.run(Quarkus.java:38)
+    at io.quarkus.runner.GeneratedMain.main(GeneratedMain.zig:30)
+Caused by: java.lang.ClassNotFoundException: com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl
+    at com.oracle.svm.core.hub.ClassForNameSupport.forName(ClassForNameSupport.java:60)
+    at java.lang.Class.forName(DynamicHub.java:1197)
+    at javax.xml.parsers.FactoryFinder.getProviderClass(FactoryFinder.java:119)
+    at javax.xml.parsers.FactoryFinder.newInstance(FactoryFinder.java:183)
+    ... 25 more
+----
+
+
+If you have read my previous post, you already know that a JSON-file needs to be provided to native-image so reflection can be used on these classes during runtime of the native application.
+
+Based on the error, I was able to construct a file `reflect-config.json` with this content:
+
+----
+[
+  {
+    "name": "com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ]
+  }
+]
+----
+
+Where does this file have to be placed so native-image picks it up? For Quarkus, there are three options:
+
+. Place in `src/main/resources` and reference via application.properties (see link:https://quarkus.io/guides/writing-native-applications-tips[QUARKUS - TIPS FOR WRITING NATIVE APPLICATIONS])
+
+. Place in `src/main/resources` and reference via build.gradle (see link:https://quarkus.io/guides/writing-native-applications-tips[QUARKUS - TIPS FOR WRITING NATIVE APPLICATIONS])
+
+. Place in `src/main/resources/META-INF/native-image` and no further confuguration is needed. It will be picked up automatically by convention.
+
+For some reason, this third and simplest solution is not mentioned in the Quarkus guide; but maybe this is a new feature in GraalVM.
+
+
+== Resource Bundles
+
+After having done this, I build the native image again and ran my application. When my application tried to parse a non-XML-file I was getting this new error:
+
+----
+java.util.MissingResourceException: Could not load any resource bundle by com.sun.org.apache.xerces.internal.impl.msg.XMLMessages
+    at jdk.xml.internal.SecuritySupport.lambda$getResourceBundle$5(SecuritySupport.java:274)
+    at java.security.AccessController.doPrivileged(AccessController.java:81)
+    at jdk.xml.internal.SecuritySupport.getResourceBundle(SecuritySupport.java:267)
+    at com.sun.org.apache.xerces.internal.impl.msg.XMLMessageFormatter.formatMessage(XMLMessageFormatter.java:74)
+    at com.sun.org.apache.xerces.internal.impl.XMLErrorReporter.reportError(XMLErrorReporter.java:357)
+    at com.sun.org.apache.xerces.internal.impl.XMLErrorReporter.reportError(XMLErrorReporter.java:327)
+    at com.sun.org.apache.xerces.internal.impl.XMLScanner.reportFatalError(XMLScanner.java:1471)
+    at com.sun.org.apache.xerces.internal.impl.XMLDocumentScannerImpl$PrologDriver.next(XMLDocumentScannerImpl.java:1013)
+    at com.sun.org.apache.xerces.internal.impl.XMLDocumentScannerImpl.next(XMLDocumentScannerImpl.java:605)
+    at com.sun.org.apache.xerces.internal.impl.XMLNSDocumentScannerImpl.next(XMLNSDocumentScannerImpl.java:112)
+    at com.sun.org.apache.xerces.internal.impl.XMLDocumentFragmentScannerImpl.scanDocument(XMLDocumentFragmentScannerImpl.java:534)
+    at com.sun.org.apache.xerces.internal.parsers.XML11Configuration.parse(XML11Configuration.java:888)
+    at com.sun.org.apache.xerces.internal.parsers.XML11Configuration.parse(XML11Configuration.java:824)
+    at com.sun.org.apache.xerces.internal.parsers.XMLParser.parse(XMLParser.java:141)
+    at com.sun.org.apache.xerces.internal.parsers.AbstractSAXParser.parse(AbstractSAXParser.java:1216)
+    at com.sun.org.apache.xerces.internal.jaxp.SAXParserImpl$JAXPSAXParser.parse(SAXParserImpl.java:635)
+    at de.dplatz.bpmndiff.entity.Diff.isValidXmlFile(Diff.java:129)
+    at de.dplatz.bpmndiff.entity.Diff.determineIfSupported(Diff.java:113)
+    at de.dplatz.bpmndiff.entity.Diff.ofPaths(Diff.java:95)
+    at de.dplatz.bpmndiff.entity.Diff.ofPaths(Diff.java:73)
+    at de.dplatz.bpmndiff.control.Differ.diff(Differ.java:39)
+    at de.dplatz.bpmndiff.boundary.DiffResource.diff(DiffResource.java:31)
+    at de.dplatz.bpmndiff.boundary.DiffResource_ClientProxy.diff(DiffResource_ClientProxy.zig:51)
+    at de.dplatz.bpmndiff.UICommand.call(UICommand.java:65)
+    at de.dplatz.bpmndiff.UICommand.call(UICommand.java:27)
+    at picocli.CommandLine.executeUserObject(CommandLine.java:1783)
+    at picocli.CommandLine.access$900(CommandLine.java:145)
+    at picocli.CommandLine$RunLast.executeUserObjectOfLastSubcommandWithSameParent(CommandLine.java:2150)
+    at picocli.CommandLine$RunLast.handle(CommandLine.java:2144)
+    at picocli.CommandLine$RunLast.handle(CommandLine.java:2108)
+    at picocli.CommandLine$AbstractParseResultHandler.execute(CommandLine.java:1975)
+    at picocli.CommandLine.execute(CommandLine.java:1904)
+    at de.dplatz.bpmndiff.UICommand.run(UICommand.java:55)
+    at de.dplatz.bpmndiff.UICommand_ClientProxy.run(UICommand_ClientProxy.zig:72)
+    at io.quarkus.runtime.ApplicationLifecycleManager.run(ApplicationLifecycleManager.java:111)
+    at io.quarkus.runtime.Quarkus.run(Quarkus.java:61)
+    at io.quarkus.runtime.Quarkus.run(Quarkus.java:38)
+    at io.quarkus.runner.GeneratedMain.main(GeneratedMain.zig:30)
+----
+
+So, it seems not only reflection needs to be configured for native-image builds, but also resources and resource-bundles (e.g. localized error message). I solved this by placing a `resource-config.json` in the same folder:
+
+----
+{
+    "resources": [],
+    "bundles": [
+        {"name":"com.sun.org.apache.xerces.internal.impl.msg.XMLMessages"}
+    ]
+}
+----
+
+After this, my native application was working succesfully.
+
+There are two things to note here:
+
+- Normally, this kind of configuration should not be needed for JDK-internal classes and APIs like the SAXParser. Unfortunately, there is a pending issue about the `java.xml` module: link:https://github.com/oracle/graal/issues/1387[].
+
+- Adding the `com.sun.org.apache.xerces.internal.impl.msg.XMLMessages` resource-bundle should also not be necessary. But even if it would be working, there is still an issue that  only the default locale is added to the native application; other locales would need to be added via the mechansim I have described (e.g. `com.sun.org.apache.xerces.internal.impl.msg.XMLMessages_de` for german messages). See the issue for details: link:https://github.com/oracle/graal/issues/911[].
+
+== Automatically generating config files.
+
+What I have done up to now is write the files manually. Is there a simpler way?
+Well, I don't really have much experience yet with generating these files but it can be done:
+
+GraalVM comes with an agent that can be used to trace all the reflective access when running your application in normal JVM-mode.
+
+----
+java -agentlib:native-image-agent=trace-output=/home/daniel/junk/trace.json -jar my-app.jar
+----
+
+This will generate a trace of all reflective access and you can use it as help to generate your configuration manually.
+
+Even simpler, the agent can be used to create the files that you can place under `src/main/resources/META-INF/native-image`:
+
+----
+java -agentlib:native-image-agent=experimental-class-loader-support,config-output-dir=../src/main/resources/META-INF/native-image/ -jar my-app.jar
+----
+
+Would this have helped us for with the SAXParser problem from above? Unfortunately not. At least not currently, because the agent specifically will not generate configuration for relective access of JDK-internal classes; it is only meant for libraries that you are using. Why? Because normally, it is assumed that all JDK internals are handled without any configuration needed. Unfortnunately, we have seen that this is currently not the case for the `jaxa.xml` module.
