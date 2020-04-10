@@ -192,4 +192,4 @@ Even simpler, the agent can be used to create the files that you can place under
 java -agentlib:native-image-agent=experimental-class-loader-support,config-output-dir=../src/main/resources/META-INF/native-image/ -jar my-app.jar
 ----
 
-Would this have helped us for with the SAXParser problem from above? Unfortunately not. At least not currently, because the agent specifically will not generate configuration for relective access of JDK-internal classes; it is only meant for libraries that you are using. Why? Because normally, it is assumed that all JDK internals are handled without any configuration needed. Unfortnunately, we have seen that this is currently not the case for the `jaxa.xml` module.
+Would this have helped us with the SAXParser problem from above? Unfortunately not. At least not currently, because the agent specifically will not generate configuration for relective access of JDK-internal classes; it is only meant for libraries external to the JDK. Why? Because normally, it is assumed that all JDK internals are handled without any configuration needed. Unfortnunately, we have seen that this is currently not the case for the `jaxa.xml` module.
