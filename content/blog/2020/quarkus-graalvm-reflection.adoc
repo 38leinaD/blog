@@ -103,14 +103,14 @@ Where does this file have to be placed so native-image picks it up? For Quarkus,
 
 . Place in `src/main/resources` and reference via build.gradle (see link:https://quarkus.io/guides/writing-native-applications-tips[QUARKUS - TIPS FOR WRITING NATIVE APPLICATIONS])
 
-. Place in `src/main/resources/META-INF/native-image` and no further confuguration is needed. It will be picked up automatically by convention.
+. Place in `src/main/resources/META-INF/native-image` and no further configuration is needed. It will be picked up automatically by convention.
 
 For some reason, this third and simplest solution is not mentioned in the Quarkus guide; but maybe this is a new feature in GraalVM.
 
 
 == Resource Bundles
 
-After having done this, I build the native image again and ran my application. When my application tried to parse a non-XML-file I was getting this new error:
+After having done this, I build the native image again and ran my application. When it tried to parse a non-XML-file I was getting this new error:
 
 ----
 java.util.MissingResourceException: Could not load any resource bundle by com.sun.org.apache.xerces.internal.impl.msg.XMLMessages
