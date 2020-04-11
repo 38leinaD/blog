@@ -1,0 +1,22 @@
+= Debugging Quarkus tests (from Gradle-based build)
+.
+2020-04-11
+:jbake-type: post
+:jbake-tags: quarkus, gradle
+:jbake-status: published
+
+If you dive deeper into Quarkus and develop more serious applications it shows that Gradle is only the second consideration after Maven.
+But it is unfair to make that argument because Quarkus also states that the Gradle-integrations is only in Preview.
+Anyway, I sometimes struggle to find the correct configurations that work for Gradle.
+
+One useful config to know is: How to enable remote-debugging for your `@QuarkusTest` and step through the test?
+
+It seems, the Quarkus Gradle plugin collects `jvmArgs` from any existing `Test` task. That's why you can enable the debugger like this:
+
+[source, groovy]
+----
+test {
+    jvmArgs '-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005'
+}
+----
+
