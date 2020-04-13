@@ -1,0 +1,61 @@
+= Quarkus - Testing against the latest code on master
+.
+2020-04-13
+:jbake-type: post
+:jbake-tags: quarkus, gradle
+:jbake-status: published
+
+Quarkus is changing quickly. If you don't want to wait for the next release or just need to test a fix quickly, there are two options to test against the latest code on master.
+
+== Build locally
+
+First option is to build Quarkus on your local system.
+
+----
+git clone https://github.com/quarkusio/quarkus.git
+cd quarkus
+./mvnw clean install -DskipTests -DskipITs
+----
+
+Now, reference the version `999-SNAPSHOT` in your `gradle.properties`:
+
+----
+quarkusPluginVersion=999-SNAPSHOT
+quarkusPlatformArtifactId=quarkus-bom
+quarkusPlatformVersion=999-SNAPSHOT
+quarkusPlatformGroupId=io.quarkus
+----
+
+This works because you should have this in your `build.gradle`:
+
+----
+repositories {
+    mavenLocal() // First look into local Maven repository under ~/.m2/repository
+    mavenCentral()
+}
+----
+
+== Latest CI snapshots
+
+Building Quarkus locally take a few minutes depending on your machine. Alternative is to use the latest snapshot that is published after each commit to master.
+
+For this, you have to change your `build.gradle` to look into the snapshot repository:
+
+----
+repositories {
+    mavenLocal()
+    maven {
+       url "https://oss.sonatype.org/content/repositories/snapshots"
+    }
+    mavenCentral()
+}
+----
+
+Obviously, you will have to make the change to your `gradle.properties` like above.
+
+Gradle by default caches snaptshots for 24 hours. If you want to force Gradle to pull the latest snapshot, you can run the build like this:
+
+----
+./gradlew build --refresh-dependencies
+----
+
