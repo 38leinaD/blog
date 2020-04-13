@@ -28,6 +28,7 @@ quarkusPlatformGroupId=io.quarkus
 
 This works because you should have this in your `build.gradle`:
 
+[source, groovy]
 ----
 repositories {
     mavenLocal() // First look into local Maven repository under ~/.m2/repository
@@ -41,6 +42,7 @@ Building Quarkus locally take a few minutes depending on your machine. Alternati
 
 For this, you have to change your `build.gradle` to look into the snapshot repository:
 
+[source, groovy]
 ----
 repositories {
     mavenLocal()
@@ -51,7 +53,27 @@ repositories {
 }
 ----
 
-Obviously, you will have to make the change to your `gradle.properties` like above.
+You will have to do essentially the same in your `settings.gradle` because the repository for the Gradle plugin is resolved from here:
+
+[source, groovy]
+----
+pluginManagement {
+    repositories {
+        mavenLocal()
+        // Added the snapshots repo here!
+        maven {
+            url "https://oss.sonatype.org/content/repositories/snapshots"
+        }
+        mavenCentral()
+        gradlePluginPortal()
+    }
+    plugins {
+      id 'io.quarkus' version "${quarkusPluginVersion}"
+    }
+}
+----
+
+Obviously, you will also have to make the change to your `gradle.properties` like above.
 
 Gradle by default caches snaptshots for 24 hours. If you want to force Gradle to pull the latest snapshot, you can run the build like this:
 
