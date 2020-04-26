@@ -19,10 +19,9 @@ See link:https://github.com/graalvm/graalvm-ce-builds/releases[here] for the lat
 I extracted GraalVM and from within the `bin` folder I ran `gu install native-image` to install the native-image tool.
 I also set up `PATH`, `GRAALVM_HOME` and `JAVA_HOME` to point to the GraalVM folder. Well, `PATH` obviously to the `bin` folder.
 
-Now, i installed Visual Studio 2019 as it is required for the native compilation. (the description on the link:https://www.graalvm.org/docs/reference-manual/native-image/#prerequisites
-[GraalVM page] is only very high-level)
+Now, I installed Visual Studio 2019 as it is required for the native compilation. (the description on the link:https://www.graalvm.org/docs/reference-manual/native-image/#prerequisites[GraalVM page] is only very high-level)
 
-Just because it is easier to describe and provide commands, I first link:https://chocolatey.org/docs/installation[installed Chocolatey] which a package manager for windows.
+Just because it is easier to describe and provide commands, I first link:https://chocolatey.org/docs/installation[installed Chocolatey] which is a package manager for Windows.
 
 After this, you should be able to install Visual Studio from your Powershell (as Admin) like this:
 
@@ -38,12 +37,10 @@ After this, you should find this file on your filesystem:
 C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Auxiliary\Build\vcvars64.bat
 ----
 
-You can run your native-image build from a Command-prompt after running this batch-script.
+Finally, run your native-image build from a Command-prompt. Note that you have to call the `vcvars64.bat` to have the proper build environment:
 
 [source, shell]
 ----
 call "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
 mvnw package -Pnative -DskipTests
 ----
-
-Note that this build can take a few minutes depending on your system.
