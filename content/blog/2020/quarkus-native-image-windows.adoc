@@ -1,0 +1,49 @@
+= Quarkus - Building Native Images on Windows
+.
+2020-04-26
+:jbake-type: post
+:jbake-tags: quarkus, graalvm
+:jbake-status: published
+
+I have been having trouble in the past to build native images for Quarkus applications under Windows due to a chain of issues.
+
+With Quarkus 1.3.2.Final, I can finally confirm that I am sucessfully able to build. See below for the steps and exact environment used.
+
+== Steps
+
+As I don't have a Windows system, I downloaded the VirtualBox image of Windows 10 from link:https://developer.microsoft.com/en-us/windows/downloads/virtual-machines/[Microsoft].
+
+Within the VM, I installed link:https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-20.0.0/graalvm-ce-java11-windows-amd64-20.0.0.zip[GraalVM 2.0.0 for Java 11].
+See link:https://github.com/graalvm/graalvm-ce-builds/releases[here] for the latest releases.
+
+I extracted GraalVM and from within the `bin` folder I ran `gu install native-image` to install the native-image tool.
+I also set up `PATH`, `GRAALVM_HOME` and `JAVA_HOME` to point to the GraalVM folder. Well, `PATH` obviously to the `bin` folder.
+
+Now, i installed Visual Studio 2019 as it is required for the native compilation. (the description on the link:https://www.graalvm.org/docs/reference-manual/native-image/#prerequisites
+[GraalVM page] is only very high-level)
+
+Just because it is easier to describe and provide commands, I first link:https://chocolatey.org/docs/installation[installed Chocolatey] which a package manager for windows.
+
+After this, you should be able to install Visual Studio from your Powershell (as Admin) like this:
+
+[source, shell]
+----
+choco install visualstudio2019-workload-vctools
+----
+
+After this, you should find this file on your filesystem:
+
+[source, shell]
+----
+C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Auxiliary\Build\vcvars64.bat
+----
+
+You can run your native-image build from a Command-prompt after running this batch-script.
+
+[source, shell]
+----
+call "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
+mvnw package -Pnative -DskipTests
+----
+
+Note that this build can take a few minutes depending on your system.
