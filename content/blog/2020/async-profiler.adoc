@@ -1,0 +1,27 @@
+= Async Profiler for Java
+.
+2020-05-02
+:jbake-type: post
+:jbake-tags: jvm
+:jbake-status: published
+
+
+link:https://github.com/jvm-profiling-tools/async-profiler[Async-profiler] is a low overhead sampling profiler for Java that produces nice flamegraphs to quickly see where CPU-cycles are eaten (`event=cpu`). It's nice that it also shows where cycles are eaten in native code and is not biased twoards your application byte-code.
+It also allows to analyze heap allocations (`event=alloc`).
+
+image::https://github.com/jvm-profiling-tools/async-profiler/raw/master/demo/SwingSet2.svg?sanitize=true[]
+
+You can either attach it to an already running Java application or use an agent to to attach it on startup.
+
+== Attach via agent on startup
+
+----
+java -agentpath:/home/daniel/tools/async-profiler-1.7-linux-x64/build/libasyncProfiler.so=start,event=cpu,file=/tmp/profile-cpu.svg,interval=1000000,framebuf=2000000,simple -jar target/myapp.jar
+----
+
+== Attach to already running process
+
+----
+profiler.sh -e cpu -f /tmp/profile-cpu.svg  -i 1000000 -b 2000000 -s <process-id>
+----
+
