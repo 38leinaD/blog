@@ -1,0 +1,31 @@
+= Jitpack.io
+.
+2020-06-29
+:jbake-type: post
+:jbake-tags: gradle eclipse
+:jbake-status: published
+
+I extensively use the link:https://github.com/TwoStone/gradle-eclipse-compiler-plugin[gradle-eclipse-compiler-plugin]. This is a Gradle plugin that allows me to use the Eclipse JDT compiler for my Gradle builds.
+Why is this useful? Because Eclipse (the IDE I use) and the command-line Gradle-build now use the same compiler. This allows me to use the Java hot-reload in the debug session from Eclipse. If the compilers are different, this especially causes problems with lambda expression where the debug session thinks methods have been added or removed because the compiled class-files are different for different compilers.
+
+But this post is not about this plugin itself, but rather that it stopped working with Gradle 6 and I quickly wanted a fix that I can also distribute to collegues that use this as well.
+Obviously, I filed an issue and made a pull-request; but until the pull-request is merged how provide the fix to others?
+Meet link:https://jitpack.io/#38leinaD/gradle-eclipse-compiler-plugin/fix~unrecognized-option-SNAPSHOT[jitpack.io] which provides a maven repository for all of Github. You can request artifacts from this repository and what it will do is check out the code from Github and build it on the fly. You can use the version to reference specific branches or commits.
+
+
+So, to use my fix/PR, I had to add the following to my Gradle project:
+
+[source, groovy]
+----
+buildscript {
+    repositories {
+            maven { url 'https://jitpack.io' }
+    }
+    dependencies {
+        classpath group: 'com.github.38leinaD', name: 'gradle-eclipse-compiler-plugin', version: 'fix~unrecognized-option-SNAPSHOT'
+    }
+}
+
+apply plugin: 'de.set.ecj'
+----
+
