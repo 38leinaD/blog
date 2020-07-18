@@ -14,7 +14,7 @@ First option is to build Quarkus on your local system.
 ----
 git clone https://github.com/quarkusio/quarkus.git
 cd quarkus
-./mvnw clean install -DskipTests -DskipITs
+./mvnw clean install -Dquickly
 ----
 
 Now, reference the version `999-SNAPSHOT` in your `gradle.properties`:
