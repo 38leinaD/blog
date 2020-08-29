@@ -1,0 +1,103 @@
+= Quarkus - Custom CDI Scopes
+.
+2020-08-29
+:jbake-type: post
+:jbake-tags: quarkus, gradle, cdi
+:jbake-status: draft
+
+Quarkus provides no full CDI implementation and as such, no support for CDI extension. This is because CDI extensions are inherently runtime-based and thus do not fit into Quarkus' model of doing as much as possible during build-time. No support for CDI extensions also means no standard support for registration of custom CDI scopes.
+
+Well, it sounds like quiet a limitation, but actually Arc (Quarkus' CDI implementation) provides an API to register custom scopes.
+And as you will see, implementing a custom scope is 99% the same as you know it from standard CDI.
+
+In this post, I will show the code for a simple custom scope that that is local to the current thread; i.e. the context keeps track of thread-local state.
+
+
+== Annotation
+
+The scope is called `CallScoped` and that is also the the name of the annotation:
+
+[source, java]
+----
+@Documented
+@NormalScope
+@Inherited
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.TYPE, ElementType.METHOD, ElementType.FIELD})
+public @interface CallScoped {}
+----
+
+== Context
+
+The context-class, which contains the main login of any custom scope, I will not put here in it's entirety but only describe what is different to a standard CDI context. You can find the `CallScopeContext` link:https://github.com/38leinaD/quarkus-sandbox/blob/feature/custom-scope/extension/src/main/java/org/acme/CallScopeContext.java[here].
+
+[source, java]
+----
+public class CallScopeContext implements InjectableContext {
+
+    static final ThreadLocal<Map<Contextual<?>, ContextInstanceHandle<?>>> ACTIVE_SCOPE_ON_THREAD = new ThreadLocal<>();
+
+    //...
+}
+----
+
+The context-class needs to implement `InjectableContext` which is Quarkus specific, but extends from the standard `AlterableContext`. So, there are only two additional methods to implement: `destroy` and `getState`. The first is to destroy the active scope entirely; and the second I assume must be needed for things like link:https://github.com/eclipse/microprofile-context-propagation/[Microprofile Context Propagation].
+
+[source, java]
+----
+@Override
+public void destroy() {
+    Map<Contextual<?>, ContextInstanceHandle<?>> context = ACTIVE_SCOPE_ON_THREAD.get();
+    if (context == null) {
+        throw new ContextNotActiveException();
+    }
+    context.values().forEach(ContextInstanceHandle::destroy);
+}
+
+@Override
+public ContextState getState() {
+    return new ContextState() {
+
+        @Override
+        public Map<InjectableBean<?>, Object> getContextualInstances() {
+            Map<Contextual<?>, ContextInstanceHandle<?>> activeScope = ACTIVE_SCOPE_ON_THREAD.get();
+
+            if (activeScope != null) {
+                return activeScope.values().stream()
+                        .collect(Collectors.toMap(ContextInstanceHandle::getBean, ContextInstanceHandle::get));
+            }
+            return Collections.emptyMap();
+        }
+    };
+}
+----
+
+== Registration
+
+The registration of the custom scope and context happens during built-time in a `@BuildStep`.
+
+[source, java]
+----
+public class ApplicationExtensionProcessor {
+
+    @BuildStep
+    public void transactionContext(
+            BuildProducer<ContextRegistrarBuildItem> contextRegistry) {
+
+        contextRegistry.produce(new ContextRegistrarBuildItem(new ContextRegistrar() {
+            @Override
+            public void register(RegistrationContext registrationContext) {
+                registrationContext.configure(CallScoped.class).normal().contextClass(CallScopeContext.class) // it needs to be of type InjectableContext...
+                        .done();
+            }
+        }, CallScoped.class));
+    }
+}
+---- 
+
+There is one slight difference to a standard CDI context. As you see, the context-class is registered during build-time by just giving the type. With CDI and a CDI extension, you would provide an instance to CDI. This way, you can create and share a single reference to your context with the CDI implementation and the application-side. I.e. for our `CallScoped`, the `CallScopeContext` offers an API to the application to start a scope on the current thread via `enter` and `exit` methods (see link:https://github.com/38leinaD/quarkus-sandbox/blob/feature/custom-scope/extension/src/main/java/org/acme/CallScopeContext.java#L112-L148[here]).
+
+Currently, this is limitation of the Quarkus way as there is no possibility to share a single instance. But because state is usually stored in statics or thread-local, there is no problem in having actually two instances of the context-class; one used by Quarkus internally, one by the application-side. But support for this is already under consideration.
+
+You can find the full code example link:https://github.com/38leinaD/quarkus-sandbox/tree/feature/custom-scope[here]. It's on a branch of my link:https://github.com/38leinaD/quarkus-sandbox/tree/feature/custom-scope[quarkus-sandbox] repo which is a good starting point if you want to experiment with Quarkus + Quarkus Extensions (using Gradle).
+
