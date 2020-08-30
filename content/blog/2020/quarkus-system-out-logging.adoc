@@ -1,0 +1,72 @@
+= Quarkus - StdOut to Log
+.
+2020-08-30
+:jbake-type: post
+:jbake-tags: quarkus, gradle, cdi
+:jbake-status: draft
+
+Quarkus uses JBoss Logging as it's default logging implementation but you will not see `System.out.println` calls gettings routed to a logger.
+From from JBoss/Wildfly, I am used to this and thus these calls end up in the log-file.
+This is currently not done in Quarkus (see link:https://github.com/quarkusio/quarkus/issues/6766[this issue].
+
+If you link:https://quarkus.io/guides/logging[enable logging to a file] via `quarkus.log.file.enable=true` in your `application.properties`, you will not see these calls in your log-file.
+
+Below is a simple class you can use to route all `System.out.println` calls in Quarkus to the logging system.
+
+[source, java]
+----
+import java.io.OutputStream;
+import java.io.PrintStream;
+
+import org.jboss.logging.Logger;
+import org.jboss.logging.Logger.Level;
+
+public class JBossLoggingOutputStream extends OutputStream {
+    private final Logger logger;
+    private final Level level;
+    private final StringBuffer buffer = new StringBuffer();
+
+    public JBossLoggingOutputStream (Logger logger, Level level) {
+        this.logger = logger;
+        this.level = level;
+    }
+
+    public void write (int b) {
+        byte[] bytes = new byte[1];
+        bytes[0] = (byte) (b & 0xff);
+        String str = new String(bytes);
+
+        if (str.equals("\n")) {
+            flush ();
+        }
+        else {
+            buffer.append(str);
+        }
+    }
+
+    public void flush () {
+        logger.log (level, buffer);
+        buffer.setLength(0);
+    }
+    
+    public static PrintStream createPrintStream(Logger logger, Level level) {
+        return new PrintStream(new JBossLoggingOutputStream(logger, level));
+    }
+}
+----
+
+You should activate this class early on in your application. For example, by observing the `StartupEvent`.
+
+[source, java]
+----
+@ApplicationScoped
+public class Startup {
+    
+    void onStart(@Observes StartupEvent ev) {
+        System.setOut(JBossLoggingOutputStream.createPrintStream(Logger.getLogger("io.quarkus"), Level.INFO));
+        System.out.println("Application started.")
+    }
+}
+----
+
+You should see that the text `Application started` is shown in the console output with proper timestamp and thread information. Also, it ends up in your log-file if you have configured it properly.
