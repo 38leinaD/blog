@@ -41,7 +41,7 @@ public class CallScopeContext implements InjectableContext {
 }
 ----
 
-The context-class needs to implement `InjectableContext` which is Quarkus specific, but extends from the standard `AlterableContext`. So, there are only two additional methods to implement: `destroy` and `getState`. The first is to destroy the active scope entirely; and the second I assume must be needed for things like link:https://github.com/eclipse/microprofile-context-propagation/[Microprofile Context Propagation].
+The context-class needs to implement `InjectableContext` which is Quarkus specific, but extends from the standard `AlterableContext`. So, there are only two additional methods to implement: `destroy` and `getState`. The first is to destroy the active scope entirely; and the second allows to capture and browse the state of the context. E.g. it enables link:https://quarkus.io/guides/cdi-reference#dev-mode[this dev-mode feature].
 
 [source, java]
 ----
