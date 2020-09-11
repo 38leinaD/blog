@@ -1,9 +1,9 @@
 = Quarkus - Custom CDI Scopes
 .
-2020-08-29
+2020-09-11
 :jbake-type: post
 :jbake-tags: quarkus, gradle, cdi
-:jbake-status: draft
+:jbake-status: published
 
 Quarkus provides no full CDI implementation and as such, no support for CDI extension. This is because CDI extensions are inherently runtime-based and thus do not fit into Quarkus' model of doing as much as possible during build-time. No support for CDI extensions also means no standard support for registration of custom CDI scopes.
 
