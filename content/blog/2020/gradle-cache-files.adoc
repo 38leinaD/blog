@@ -1,0 +1,64 @@
+= Access of Jars from Gradle cache
+.
+2020-09-25
+:jbake-type: post
+:jbake-tags: gradle
+:jbake-status: published
+
+There are times where you quickly need the path to a JAR-file from the Gradle cache. For Maven this is quiet straight-forward as the path of a file in the local Maven cache (`~/.m2/repository`) is determined alone by the GAV coordinates.
+This is not the case for Gradle. Files are located under `~/.gradle/caches` but the folder-names look like they are hash-values and the only way I know how to get the path of a JAR-file is by actually running a Gradle build-script that downloads and resolves the dependency.
+
+For this reason, I now have a small shell-script that does it exactly that:
+
+[source, sh]
+----
+#!/bin/bash
+# gradle-resolve.sh
+tmp_dir=$(mktemp -d)
+cat << EOF > $tmp_dir/build.gradle
+plugins {
+    id 'java'
+}
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+    implementation "$2"
+}
+
+tasks.register("getClasspath") { 
+    doLast {
+        println configurations.runtimeClasspath.join(':')
+    }
+}
+
+tasks.register("getJar") { 
+    doLast {
+        println configurations.runtimeClasspath[0]
+    }
+}
+EOF
+
+(cd $tmp_dir && gradle $1 --console=plain --quiet)
+----
+
+It can be invoked with `getJar` to get the path of the JAR in the Gradle cache:
+
+----
+gradle-resolve.sh getJar org.jboss:jandex:2.0.5.Final 
+/home/daniel/.gradle/caches/modules-2/files-2.1/org.jboss/jandex/2.0.5.Final/7060f67764565b9ee9d467e3ed0cb8a9c601b23a/jandex-2.0.5.Final.jar
+----
+
+Or it can be invoked with `getClasspath` to get the whole runtime-classpath.
+----
+gradle-resolve.sh getClasspath org.eclipse.jetty:jetty-server:9.4.29.v20200521
+/home/daniel/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty/jetty-server/9.4.29.v20200521/2c6590067589a0730223416c3157b1d4d121b95b/jetty-server-9.4.29.v20200521.jar:/home/daniel/.gradle/caches/modules-2/files-2.1/javax.servlet/javax.servlet-api/3.1.0/3cd63d075497751784b2fa84be59432f4905bf7c/javax.servlet-api-3.1.0.jar:/home/daniel/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty/jetty-http/9.4.29.v20200521/21b761eae53b8e5201fb8fdf03b9865116a29b47/jetty-http-9.4.29.v20200521.jar:/home/daniel/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty/jetty-io/9.4.29.v20200521/ffadd07dc4e9d0783531922ed565b667ad95766e/jetty-io-9.4.29.v20200521.jar:/home/daniel/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty/jetty-util/9.4.29.v20200521/4866aa5271465f1d9035c4726209e4926fe1599c/jetty-util-9.4.29.v20200521.jar
+----
+
+So, to run the `Main-Class` from the jandex jar, you can execute:
+
+----
+java -jar $(gradle-resolve.sh getJar org.jboss:jandex:2.0.5.Final)
+----
