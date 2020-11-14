@@ -1,9 +1,9 @@
 = Quarkus - StdOut to Log
 .
-2020-08-30
+2020-11-14
 :jbake-type: post
-:jbake-tags: quarkus, gradle, cdi
-:jbake-status: draft
+:jbake-tags: quarkus
+:jbake-status: published
 
 Quarkus uses JBoss Logging as it's default logging implementation but you will not see `System.out.println` calls gettings routed to a logger.
 From from JBoss/Wildfly, I am used to this and thus these calls end up in the log-file.
