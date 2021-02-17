@@ -69,4 +69,6 @@ Just as a side-note: JBang is just a great tool for writing small scripts with J
 ----
 sudo snap install jbang --classic
 jbang run firestarter@38leinaD
----- 
+----
+
+NOTE: Update: As of now, Snap hosts JBang 0.66.1 which is the latest version and is working with firestarter as well.
