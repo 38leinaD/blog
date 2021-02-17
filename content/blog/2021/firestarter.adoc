@@ -1,4 +1,4 @@
-= Firestarter - A fireplace with JBang and Quakus
+= Firestarter - A fireplace with JBang and Quarkus
 .
 2021-02-17
 :jbake-type: post
