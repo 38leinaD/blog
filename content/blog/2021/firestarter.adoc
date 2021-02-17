@@ -1,0 +1,72 @@
+= Firestarter - A fireplace with JBang and Quakus
+.
+2021-02-17
+:jbake-type: post
+:jbake-tags: jbang raspi
+:jbake-status: published
+
+
+My dad built us a "fake fireplace" as decoration some time ago. Actually, it was a gift for my wife's birthday.
+After beeing placed in the hall for some time, it finally found the perfect spot in our living room.
+With its new spot also came a power outlet right behind it. We tought it would be nice if the fireplace actually would be even "more fake"; so I got a spare Monitor, a Raspberry Pi and added a few lines of Java using link:https://quarkus.io/[Quarkus] and link:https://github.com/jbangdev/jbang[JBang].
+
+link:https://github.com/38leinaD/jbang-catalog/blob/master/src/firestarter[Firestarter] is the final result. Essentially, it opens a browser in fullscreen and plays whichever YouTube clip you have configured. As I do not want to ask my wife to connect to the Raspberry Pi via SSH to change the clip, I added a small web-interface that can be easily opened on the phone.
+
+++++
+<div width="100%" align="center" >
+<iframe width="560" height="315" src="https://www.youtube.com/embed/Er8jJSSBXEI" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div>
+++++
+
+== Installation
+
+First, check via `java -version` if you have JDK 11 installed on the Raspberry Pi. If not, run
+
+----
+sudo apt install default-jdk
+----
+
+
+The simplest way to use Firestarter (which uses JBang) on the Raspberry Pi is via the link:https://github.com/jbangdev/jbang#zero-install[zero-installation approach]:
+
+----
+curl -Ls https://sh.jbang.dev | bash -s - firestarter@38leinaD
+----
+
+== Autostart
+
+If you would like to have Firestarter autostart after booting to the desktop, you just have to place below file in `~/.config/autostart/`
+
+
+.firestarter.desktop
+----
+[Desktop Entry]
+Type=Application
+Name=firestarter
+uomment=Starts the firestarter app on startup
+Exec=/bin/bash -c "sleep 10 && curl -Ls https://sh.jbang.dev | bash -s - firestarter@38leinaD"
+NotShowIn=GNOME;KDE;XFCE;
+----
+
+The `sleep` is just to wait a few seconds after boot so the Wifi is connected. Otherwise, the curl might fail. There are link:https://raspberrypi.stackexchange.com/questions/45769/how-to-wait-for-networking-on-login-after-reboot[more reliable alternatives] but it is good enough for me.
+
+== Move mouse
+
+I had the problem that the mouse was placed on the taskbar after boot. That position is over the YouTube clip in Chrome later on and thus title and controls will stay visible.
+To move the mouse out of the way, I used the answer to link:https://raspberrypi.stackexchange.com/questions/67791/how-to-move-mouse-pointer-to-a-specific-location-on-the-screen-at-boot[this stackoverflow question] and removed `@point-rpi` from `/home/pi/.config/lxsession/LXDE-pi/autostart`.
+
+== Changing the Fireplace Video
+
+Open link:http://pi.local:8080/firestarter[http://pi.local:8080/firestarter] (or whatever is the name/IP of your Raspberry Pi on the local network) from any Browser in your local network and paste the Url of a YouTube clip.
+
+This one is especially nice if you are a fan of pixel-art: link:https://www.youtube.com/watch?v=mfkmcEtUVxQ[A Pixel Fireplace].
+
+
+== JBang Installation on Rasperry Pi
+
+Just as a side-note: JBang is just a great tool for writing small scripts with Java. There are multiple ways to use/install JBang on the Raspberry Pi. One possibility is to install it via link:https://snapcraft.io/install/jbang/ubuntu[Snap]. Unfortunately, it does not have the latest version of JBang currently (see link:https://github.com/jbangdev/jbang-snap/issues/1[here]). So, firestarter will not work with the JBang version from Snap currently. Once the JBang version on Snap is updated, you could use it like this as well:
+
+----
+sudo snap install jbang --classic
+jbang run firestarter@38leinaD
+---- 
