@@ -8,7 +8,7 @@
 
 My dad built us a "fake fireplace" as decoration some time ago. Actually, it was a gift for my wife's birthday.
 After beeing placed in the hall for some time, it finally found the perfect spot in our living room.
-With its new spot also came a power outlet right behind it. We tought it would be nice if the fireplace actually would be even "more fake"; so I got a spare Monitor, a Raspberry Pi and added a few lines of Java using link:https://quarkus.io/[Quarkus] and link:https://github.com/jbangdev/jbang[JBang].
+With its new spot also came a power outlet right behind it. We thought it would be nice if the fireplace actually would be even "more fake"; so I got a spare Monitor, a Raspberry Pi and added a few lines of Java using link:https://quarkus.io/[Quarkus] and link:https://github.com/jbangdev/jbang[JBang].
 
 link:https://github.com/38leinaD/jbang-catalog/blob/master/src/firestarter[Firestarter] is the final result. Essentially, it opens a browser in fullscreen and plays whichever YouTube clip you have configured. As I do not want to ask my wife to connect to the Raspberry Pi via SSH to change the clip, I added a small web-interface that can be easily opened on the phone.
 
