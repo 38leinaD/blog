@@ -1,0 +1,96 @@
+= AWS CDK & JBang
+.
+2021-03-01
+:jbake-type: post
+:jbake-tags: jbang aws
+:jbake-status: published
+
+I am a big of AWS and the services it offers. What I am not a big fan of, is CloudFormation; in the sense that I don't like to write huge YAML files to define my AWS resources.
+An alternative approach is to use a tool like Ansible, where learning it, at least can be used also for other Cloud providers like Azure. But still, as a Java Developer, I don't feel comforable writing extensive/large YAML or JSON files.
+
+Meet the link:https://docs.aws.amazon.com/cdk/index.html[AWS Cloud Development Kit] (CDK), which essentially allows you to define your AWS resources by writing Java code.
+
+CDK comes with a Node-based commandline, so you will first have to install Node 10+; now, install the `aws-cdk` CLI tool:
+
+----
+sudo npm install -g aws-cdk
+----
+
+== Maven
+
+What you could be doing now, is scaffold a Maven project and use it to define your recourses in Java code.
+Within an empty directory for your project run:
+
+----
+cdk init app --language=java
+----
+
+You can now import this into your IDE of choice, define resource in Java and then deploy it using `cdk deploy` assuming you have a default profile for AWS set up on your system/user (check ~/.aws/credentials).
+
+This is already quiet nice and I can recommand you to have a look at the link:https://www.youtube.com/watch?v=R3G35YAZUeg&list=PLFjB4VDnlT_2ESzRwRrPnj47pn13K60iL[Video series by rickpil] and the great link:https://docs.aws.amazon.com/cdk/api/latest/docs/aws-construct-library.html[CDK API reference].
+
+== JBang
+
+What is even cooler, is that we can use it with JBang as well.
+If you take a look at the Maven project, it is just a regular project without any specific plugins. The only thing that makes it work and ties it to the cdk CLI tool, is the `cdk.json` in the root folder. It contains an `app` parameter which gives it a command to run the application (`mvn -e -q compile exec:java`). Actually, what is happening, is that the Java application will produce a CloudFormation template, which is than feed to AWS.
+
+So, what we need for a minimalist AWS deployment script using JBang, is the below two files only.
+
+.awsdeployment.java
+[source, java]
+----
+///usr/bin/env jbang "$0" "$@" ; exit $?
+//DEPS software.amazon.awscdk:core:1.91.0
+//DEPS software.amazon.awscdk:s3:1.91.0
+
+import software.amazon.awscdk.core.App;
+import software.amazon.awscdk.core.Construct;
+import software.amazon.awscdk.core.Stack;
+import software.amazon.awscdk.core.StackProps;
+import software.amazon.awscdk.services.s3.Bucket;
+
+import static java.lang.System.*;
+import java.util.Arrays;
+
+public class awsdeployment extends Stack {
+    public static void main(final String[] args) {
+        App app = new App();
+
+        new awsdeployment(app, "AwsCdkTestStack");
+
+        app.synth();
+    }
+
+    public awsdeployment(final Construct scope, final String id) {
+        this(scope, id, null);
+    }
+
+    public awsdeployment(final Construct scope, final String id, final StackProps props) {
+        super(scope, id, props);
+
+        // Create an S3 bucket
+        new Bucket(this, "MyBucket");
+
+        // Create other resources...
+    }
+}
+----
+
+.cdk.json
+[source, json]
+----
+{
+  "app": "jbang awsdeployment.java",
+  "context": {
+    "@aws-cdk/core:enableStackNameDuplicates": "true",
+    "aws-cdk:enableDiffNoFail": "true",
+    "@aws-cdk/core:stackRelativeExports": "true",
+    "@aws-cdk/aws-ecr-assets:dockerIgnoreSupport": true,
+    "@aws-cdk/aws-secretsmanager:parseOwnedSecretName": true,
+    "@aws-cdk/aws-kms:defaultKeyPolicies": true,
+    "@aws-cdk/aws-s3:grantWriteWithoutAcl": true
+  }
+}
+----
+
+When you run `cdk deploy`, it should deploy an S3 bucket named "MyBucket" to AWS.
