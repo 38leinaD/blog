@@ -1,0 +1,79 @@
+= Quarkus - OIDC - Offering a Login button
+.
+2021-04-02
+:jbake-type: post
+:jbake-tags: quarkus oidc
+:jbake-status: published
+
+Quarkus offers an integration with OpenIdConnect (OIDC). This means, you can use indentity providers like Keycloak, ForgeRock or AWS Cognito to delegate your authentication needs. With Keycloak, you can also have identity brokering with other identity providers. This means, people can sign up with your application/service via Keycloak directly or people can also select an option like "Login with GitHub".
+
+For the general usage of OIDC with Quarkus, please refer to link:https://quarkus.io/guides/security-openid-connect-web-authentication[this guide]. My post is about the specific need of offering a Login-button in your application; which I would have thought to be an out of the box feature. Don't get me wrong; this is not hard to achieve, but also not trivial and well documented.
+
+My general setup is a Quarkus application with server-side-rendered Web frontend. This may be JSF (the Quarkus Universe offers a MyFaces extension), but for me it was using the more lightweight link:https://quarkus.io/guides/qute-reference[Qute template library]; which feels more like Spring MVC with Thymeleaf.
+
+=== Problem Statement
+
+So, what exactly do we want? If a user is not logged in, there should be a Login-button. Once this button is pressed, the user should be redirected to the identity provider's login page. Once the login is done, I would like to redirect the user to same URL he was coming from. I.e. the user might be browsing a specific page or product in the catalog and decides to log in.
+
+The thing with offering a login button is that there is no URL to the login page. The redirects to the identity provider happen in Quarkus internally by intercepting the requests and checking if a URL is protected or not. If a URL is protected and there is not valid Access Token already exchanged, the login is triggered.
+Also, in my case, most pages are not really protected but can be accessed by a unauthenticated as well as by a logged in user. The difference is just what actions are possible on the page.
+
+
+This is the basic configuration for OIDC with Keycloak as my identity provider. You see, that `quarkus.http.auth.permission.permit1` gives full access all URLs also users that are not logged in.
+
+----
+quarkus.oidc.enabled=true
+quarkus.oidc.auth-server-url=http://localhost:8180/auth/realms/quarkus
+quarkus.oidc.client-id=frontend
+quarkus.oidc.application-type=web_app
+quarkus.oidc.logout.path=/logout
+quarkus.oidc.logout.post-logout-path=/
+quarkus.oidc.token.refresh-expired=true
+quarkus.oidc.authentication.session-age-extension=30M
+
+quarkus.http.auth.permission.permit1.paths=/*
+quarkus.http.auth.permission.permit1.policy=permit
+quarkus.http.auth.permission.permit1.methods=GET,POST
+----
+
+
+=== Solution
+
+The way to offer a login button is by registering a URL/endpoint that is actually protected:
+
+----
+quarkus.http.auth.permission.authenticated.paths=/login
+quarkus.http.auth.permission.authenticated.policy=authenticated
+----
+
+This URL is not provided by Quarkus but needs to be provided by ourselfs:
+
+[source, java]
+----
+@Path("/")
+public class IndexResource {
+    
+    // Other methods...
+
+    @GET
+    @Path("login")
+    public Response login(@QueryParam("redirect") String redirect) {
+        return Response.temporaryRedirect(URI.create(redirect)).build();
+    }
+}
+----
+
+On my HTML page (Qute template), I offer a login button like this:
+
+----
+<a class="button is-light" href="javascript:location.href='/login?redirect=' + encodeURIComponent(location.href)">
+    Login
+</a>
+----
+
+How exactly does this work when the user presses the Login button?
+
+The Login button will send a GET request for the page `/login?redirect=...`. The GET request contains a `redirect=...` query parameter with the URL of the currently open page. The redirect is so after the login we can get back to this page.
+Quarkus will notice from the config `quarkus.http.auth.permission.permit1` that `/login` is protected. If the user is not logged in, we will be redirected to the Keycloak login page. Once the login is done, Keycloak will redirect to the `/login` page. This will invoke our `IndexResource.login` method, where we will again redirect to the `redirect` parameter URL; bringing us back to the initial page the user pressed the Login button on. He is now logged in.
+
+I hope the process is clear and it helps others to implement the same flow. To me, it looked like this is not very well documented and it felt to me like I had to come up with this solution myself and get confirmation that this was indeed the right approach.
