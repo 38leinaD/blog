@@ -65,6 +65,7 @@ public class IndexResource {
 
 On my HTML page (Qute template), I offer a login button like this:
 
+[source, html]
 ----
 <a class="button is-light" href="javascript:location.href='/login?redirect=' + encodeURIComponent(location.href)">
     Login
