@@ -1,0 +1,45 @@
+= AWS RDS with IAM Auth
+.
+2022-08-06
+:jbake-type: post
+:jbake-tags: aws
+:jbake-status: published
+
+When looking up things in the offical AWS Docs, code examples often still refer to AWS SDK version 1. Whereas the latest version of the SDK is version 2 and completly different API-wise.
+Same so the other day when I needed to find out link:https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.IAMDBAuth.Connecting.Java.html[how to generate an IAM token to access the AWS RDS Aurora database].
+
+Digging through a link:https://github.com/aws/aws-sdk-java-v2/issues/1157[Github issue] and a link:https://github.com/aws/aws-sdk-java-v2/pull/2057[pull-request] lead me to the solution:
+
+[source, java]
+----
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.rds.RdsUtilities;
+import software.amazon.awssdk.services.rds.model.GenerateAuthenticationTokenRequest;
+
+public class IamTokenGenerator {
+    
+    public static String retrieveIamToken(String hostname, int port, String username) {
+        RdsUtilities rdsUtilities = RdsUtilities.builder()
+                .credentialsProvider(DefaultCredentialsProvider.create())
+                .region(Region.EU_CENTRAL_1)
+                .build();
+        GenerateAuthenticationTokenRequest tokenRequest = GenerateAuthenticationTokenRequest.builder()
+                .credentialsProvider(DefaultCredentialsProvider.create())
+                .region(Region.EU_CENTRAL_1)
+                .hostname(hostname)
+                .port(port)
+                .username(username)
+                .build();
+        return rdsUtilities.generateAuthenticationToken(tokenRequest);
+    }
+}
+----
+
+The following dependency is needed (`RdsUtilities` was only introduced in `2.16.3`!):
+
+----
+implementation 'software.amazon.awssdk:rds:2.16.3'
+----
+
+Maybe this can save someone a few minutes.
