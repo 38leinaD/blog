@@ -5,15 +5,13 @@
 :jbake-tags: javascript, webcomponents
 :jbake-status: published
 
-I have been a long-time fan from what once was called link:https://www.pikapkg.com/blog/pika-web-a-future-without-webpack/[Pika] and now is called link:https://www.snowpack.dev/[Snowpack].
-Basically, it was the revolution how JavaScrip Webapps are built. Instead of requiring a customer dev-server and doing a lot of "bundler magic" behind the scenes (basically every framework out there like Angular, Vue, etc. using Webpack), it just processed the Node dependencies and converted them into standard ESM modules. What you could do now is reference this standard ESM modules from your App without the need of a special build step on your application or custom dev-server. Modern browser can process imports like `import { html, LitElement } from './lib/lit-element.js';`. Just copy your HTML, standard/vanilla JS on a plain web-server (or use a generic tool like browser-sync) and way you go.
+I have been a long-time fan of what once was called link:https://www.pikapkg.com/blog/pika-web-a-future-without-webpack/[Pika] and now is called link:https://www.snowpack.dev/[Snowpack].
+Basically, it was the revolution how JavaScript web-apps are built. Instead of requiring a custom dev-server and doing a lot of "bundler magic" behind the scenes (basically every framework out there like Angular, Vue, etc. using Webpack), it just processed the Node dependencies and converted them into standard ESM modules. What you could do now is reference this standard ESM modules from your App without the need of a special build step on your application or custom dev-server. Modern browser can process imports like `import { html, LitElement } from './lib/lit-element.js';`. Just copy your HTML, standard/vanilla JS on a plain web-server (or use a generic tool like browser-sync) and way you go. You can read more about the general approach in one of my link:blog/2019/es6-bare-imports.html[previous posts].
 
 To me this approach always felt very natural, intuitive and did not introduce too much dependency on complex tools that lock you in.
-With Snowpack 3, I am getting the same vibe now like previously with Webpack etc. before. It has become a complex tool (includes bundeling, minification, etc.) that requires you to now use it's own dev-server.
+With Snowpack 3, I am getting the same vibe now like previously with Webpack. It has become a complex tool (includes bundeling, minification, etc.) that requires you to now use it's own dev-server.
 
-For this reason, I have now moved back to a tool a lower-level tool which is called link:https://rollupjs.org/guide/en/[rollup.js]. With rollup.js, we can convert Node dependency into standard ESM modules. Nothing more and nothing less.
-
-You can find the full example project link:https://github.com/38leinaD/webstandards-starter[on GitHub].
+For this reason, I have now moved back to a lower-level tool which is called link:https://rollupjs.org/guide/en/[rollup.js]. With rollup.js, we can convert Node dependency into standard ESM modules. Nothing more and nothing less. You can find the full example project link:https://github.com/38leinaD/webstandards-starter[on GitHub].
 
 The main parts are the `package.json` with dependecy to `rollup` and the `webDependencies` section that I have kept analogous to how Pika/Snowpack have it:
 
@@ -25,7 +23,7 @@ The main parts are the `package.json` with dependecy to `rollup` and the `webDep
   "description": "Starter project for web-development using the web's latest standards.",
   "main": "src/AppMain.js",
   "scripts": {
-    "postinstall": "rollup -c",
+    "postinstall": "rollup -c", <1>
     "start": "browser-sync src -f src --single --cors --no-notify --single"
   },
   "repository": {
@@ -40,15 +38,15 @@ The main parts are the `package.json` with dependecy to `rollup` and the `webDep
   "homepage": "https://github.com/38leinaD/webstandards-starter#readme",
   "devDependencies": {
     "browser-sync": "^2.27.10",
-    "@rollup/plugin-node-resolve": "^15.0.0",
-    "rollup": "^3.2.1"
+    "rollup": "^3.2.1", <2>
+    "@rollup/plugin-node-resolve": "^15.0.0"
   },
   "dependencies": {
     "@vaadin/router": "^1.7.4",
     "lit-element": "^3.2.2"
   },
   "rollup": {
-    "webDependencies": [
+    "webDependencies": [ <3>
       "@vaadin/router/dist/vaadin-router.js",
       "lit-element/lit-element.js",
       "lit-html/directives/async-append.js",
@@ -65,6 +63,9 @@ The main parts are the `package.json` with dependecy to `rollup` and the `webDep
   }
 }
 ----
+<1> `postinstall` runs rollup when executing `npm install`
+<2> devDependency to rollup and rollup plugin
+<3> Similar `webDependencies` configuration as known from Pika/Snowpack
 
 You can see that I added a `postinstall` step executing `rollup -c`. What this will do is call rollup on `npm install` and use the `rollup.config.mjs` file which looks like this:
 
@@ -108,6 +109,6 @@ export default JSON.parse(fs.readFileSync('package.json', 'utf8')).rollup.webDep
 });
 ----
 
-What this does is a minimalist version of what Pika and Snowpack also do: Process each of the elements in `webDependencies` and convert the dependency into a standard ESM module. The ESM module is created under `src/lib` and allows for easy referencing via `import` from the application. After running the install-step, you can copy the app to any standard web-server; or use `browser-sync` for that matter.
+What this does is the bare minimum of what Pika and Snowpack are also doing: Process each of the elements in `webDependencies` and convert the dependency into a standard ESM module. The ESM module is created under `src/lib` and allows for easy referencing via `import` from the application. After running the install-step, you can copy the app to any standard web-server; or use `browser-sync` for that matter.
 
 I am not saying that this is the way to go for bigger commerical projects, but to me this makes for a simple and understandable setup that at least serves me well for learning purposes and personal projects. Eventually, most libraries/dependencies will come out of the box as ESM modules and the rollup step can be eliminated completely.
