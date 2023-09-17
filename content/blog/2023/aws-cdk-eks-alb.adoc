@@ -1,0 +1,42 @@
+= Deploying a Quarkus application using sticky sessions to AWS EKS using AWS CDK
+.
+2022-08-06
+:jbake-type: post
+:jbake-tags: aws
+:jbake-status: published
+
+JSF applications rely on sticky sessions. This means, the server-side JVM maintains state (usally in memory) for a particular user/client. For this each request needs to be routed to the same JVM; in Kubernetes language: to the same pod. The relation between client and server is achieved by sending a session-cookie to the browser. The browser sends this cookie to the server in every request. Now the infrastructure in between needs to be set up so it recognizes this cookie (it needs to be aware about this cookie / the name of the cookie) and routes / pins the request appropriately to the same pod.
+
+I wanted to see how exactly to set this up in the context of AWS Elastic Kubernetes Service (EKS). For that I created this link:https://github.com/38leinaD/aws-playground[Github repository]. It uses AWS' Java CDK to deploy the infrastructure (Elastic Container Registry, Elastic Kubernetes Service) and then deploys a simple Quarkus application that helped me verify the correct handling of the cookie / the stickyness.
+
+The only step to run is `./deploy.sh all`. This will provision the AWS infrastructure and then deploy the application assuming you have used AWS on your system before and have valid AWS credentials configured.
+
+Running `kubectl get pods -o wide` you should see that because we have provisioned two EC2 nodes as part of the Kubernetes cluster that the pods are running on different nodes.
+
+The output of the `deploy.sh` should have given you the public endpoint that was provisioned (`Access @ http://<aws-public-endpoint>/hello` should have been printed). Accessing this endpoing will print all environment variables of the pod. If you run `http://<aws-public-endpoint>/hello?var=HOSTNAME` it will print only the hostname of the pod. You should see that on each request you get a different pod due to the load balancer.
+If you access `http://<aws-public-endpoint>/hello/session` instead, you should see that it should connect to the same pod each time because a cookie gets crated and sent to the client.
+The cookie name that is created in the code (link:https://github.com/38leinaD/aws-playground/blob/master/app/src/main/java/de/dplatz/TestResource.java#L29[]) needs to match the configuration of the Application Loadbalancer (ALB) in the ingress configuration (link:https://github.com/38leinaD/aws-playground/blob/master/deployment/k8s/services.yaml#L65[]; see `stickiness.app_cookie.cookie_name=name`). Note the very uninspired cookie-name `name`.
+
+Please note that for the ingress to work properly, the ALB controller needs to be link:https://github.com/38leinaD/aws-playground/blob/master/deployment/aws/src/main/java/de/dplatz/CDKStack.java#L66-L68
+[configured] as part of provisioning the EKS cluster:
+
+[source, java]
+----
+Cluster eksCluster = Cluster.Builder.create(this,"eks-cluster")
+        .vpc(vpc)
+        .vpcSubnets(List.of(
+                SubnetSelection.builder().subnetType(SubnetType.PUBLIC).build(),
+                SubnetSelection.builder().subnetType(SubnetType.PUBLIC).build(),
+                SubnetSelection.builder().subnetType(SubnetType.PUBLIC).build()))
+        .defaultCapacity(2)
+        .defaultCapacityInstance(InstanceType.of(InstanceClass.T3, InstanceSize.SMALL))
+        .defaultCapacityType(DefaultCapacityType.EC2)
+        .mastersRole(clusterAdminRole)
+        .albController(AlbControllerOptions.builder() <1>
+                .version(AlbControllerVersion.V2_5_1)
+                .build())
+        .version(KubernetesVersion.V1_27).build();
+----
+<1> ALB controller required by the ingress
+
+Don't forget to run `./deploy.sh destroy` at the end to shut everything down again.
