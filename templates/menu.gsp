@@ -11,6 +11,8 @@
     <div class="collapse navbar-collapse" id="navbarColor01">
       <ul class="navbar-nav mr-auto">
         <li class="nav-item"><a class="nav-link" href="<%if (content.rootpath) {%>${content.rootpath}<% } else { %><% }%>index.html">Blog</a></li>
+        <li class="nav-item"><a class="nav-link" href="https://dplatz.de/aiblog/">AI Blog</a></li>
+
         <li class="nav-item"><a class="nav-link" href="<%if (content.rootpath) {%>${content.rootpath}<% } else { %><% }%>about.html">About</a></li>
         <li class="nav-item"><a class="nav-link" href="<%if (content.rootpath) {%>${content.rootpath}<% } else { %><% }%>archive.html">Archive</a></li>
         <li class="nav-item"><a class="nav-link" href="<%if (content.rootpath) {%>${content.rootpath}<% } else { %><% }%>tags/">Tags</a></li>

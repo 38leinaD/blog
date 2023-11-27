@@ -1,0 +1,9 @@
+= Ramblings in AI
+.
+2023-11-21
+:jbake-type: post
+:jbake-tags: ai python jupyter
+:jbake-status: published
+
+As I am progressing with my learnings in AI, I wanted to have a way to keep a diary. Though JBake is great for my main Java-based blog, it is not perfect for documenting in the Python realm. Here, Jupyter notebooks are king.
+For that reason, I set up a seperate page to document my ramblings in Python and AI under link:https://dplatz.de/aiblog/[]).
