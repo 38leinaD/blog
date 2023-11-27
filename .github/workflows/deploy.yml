@@ -23,5 +23,5 @@ jobs:
         java-version: 11
     - name: Deploy to github pages via jbake
       env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PAGES_TOKEN: ${{ secrets.PAGES_TOKEN }}
       run: ./deploy.sh
