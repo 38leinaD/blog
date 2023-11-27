@@ -10,4 +10,4 @@ cd output
 
 git init
 git add . ; git commit -m "Deploy to GitHub Pages"
-git push --force --quiet git@github.com:38leinaD/38leinaD.github.io.git master:master
+git push --force --quiet user:$GITHUB_TOKEN@github.com:38leinaD/38leinaD.github.io.git master:master
