@@ -9,5 +9,11 @@ cp CNAME output/
 cd output
 
 git init
-git add . ; git commit -m "Deploy to GitHub Pages"
+
+git config --unset-all http.https://github.com/.extraheader
+git config user.email "daniel.platz@me.com"
+git config user.name "GH Actions"
+
+git add .
+git commit -m "Deploy to GitHub Pages"
 git push --force --quiet user:$GITHUB_TOKEN@github.com:38leinaD/38leinaD.github.io.git master:master
