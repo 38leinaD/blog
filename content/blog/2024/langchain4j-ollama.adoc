@@ -1,0 +1,154 @@
+= Running a local LLM on Ollama and LangChain4J
+.
+2024-01-01
+:jbake-type: post
+:jbake-tags: ai ollama langchain4j quarkus jbang
+:jbake-status: published
+
+When working on my personal projects, I see myself quiet often reaching out to ChatGPT for a quick explaination or tip. Unfortunately, this is not possible/allowed in most corporate environments.
+That's why I was naturally very interested in what it takes to run a Large Language Model (LLM) locally on my machine and maybe even enrich it with some domain knowledge and see if it can help in my daytime job for some use-case (either by fine-tuning wich is harder or by retrieval augmented generation (RAG)).
+
+The AI journey for me just started, that's why the goal of this post is to show how easy it is to run an LLM locally and access it from a Java-based application leveraging link:https://github.com/langchain4j/langchain4j[LangChain4J].
+As everyone has some favorite tools in his belt, it is natural to use them. That's why my code example below is a self-contained JBang script that is leverarging link:https://quarkus.io/[Quarkus] and it's link:https://github.com/quarkiverse/quarkus-langchain4j[LangChain4J extension].
+You can just as easily cut Quarkus out of the picture and use LangChain4J directly, but I was especially interested in the state of the Quarkus Integration for LangChain4J.
+
+So, as you might have understood by now, LangChain4J is a big part of what allows you to access an LLM. What is important to understand here, is that it is only an abstraction to program against different AI services. LangChain4J does not actually run/host an LLM.
+For that we will need another service that runs the LLM and exposes it so LangChain4J can access it. As a matter of fact, LangChain4J can integrate with OpenAI's GPT models as they expose a Restful API for it.
+In a similar fashion we can run an LLM locally with link:https://ollama.ai/[Ollama] and configure the exposed Restful endpoint for LangChain4J to use.
+As this is just the beginning of the journey for me, I cannot explain to you what it would take to run/host an LLM in Java natively. For sure it must be technically possible, but then again, what is the big benefit?
+
+== Installing Ollama
+
+So, first step is to install Ollama. I ran it under WSL on a Windows machine and the steps you can find link:https://ollama.ai/download/linux[here] are as simple as they get:
+
+----
+curl https://ollama.ai/install.sh | sh
+----
+
+After this you need to download a model and then can interact with it via the commandline. If you have an already rather old Graphics cards like an NVidia RTX 2060 (with 6 GB VRAM), you can run a mid-sized model like Mistral 7b without problems on your GPU alone.
+Run `ollama run mistral` which will download the model and then start a prompt to interact with it. The download is 4 GB, so it might take a few minutes depending on your internet speed.
+If you feel like your PC is not capable of running this model, maybe try link:https://ollama.ai/library/orca-mini/tags[orca-mini] instead and run `ollama run orca-mini:3b`.
+Generally, the models should be capable to run on a compatible GPU or fall back to running on the CPU. In case of running on the CPU, you will need a corresponding amount of RAM to load it.
+
+Ollama will install as a service and expose a Restful API on port 11434. So, instead of using the command prompt you can also try to hit it via curl for a first test:
+
+----
+curl -i -X POST http://127.0.0.1:11434/api/generate -d '{"model": "mistral", "prompt": "Why is the sky blue?"}'
+----
+
+Note that you have to provide your model that you download before as the `model` parameter.
+
+== Quarkus and Langchain4J
+
+If this is working we can come to the next step and use the LLM from within our Java application. For that, we need the LangChain4J library which can talk to our Ollama service.
+Also, as I am a big fan of JBang and Quarkus, these were my natural choice for integrating with LangChain4J. But you can just as well use Langchain4J directly without any framework. See link:https://github.com/langchain4j/langchain4j/blob/main/langchain4j-ollama/src/test/java/dev/langchain4j/model/ollama/OllamaLanguageModelIT.java[this test] for the most basic integration between Langchain4J and Ollama.
+
+Now lets come to this self-contained JBang script that will interact with the Ollama-based LLM:
+
+[source, java]
+----
+///usr/bin/env jbang "$0" "$@" ; exit $?
+//DEPS io.quarkus.platform:quarkus-bom:3.6.4@pom
+//DEPS io.quarkus:quarkus-picocli
+//DEPS io.quarkus:quarkus-arc
+//DEPS io.quarkiverse.langchain4j:quarkus-langchain4j-ollama:0.5.1 <1>
+
+//JAVAC_OPTIONS -parameters
+//JAVA_OPTIONS -Djava.util.logging.manager=org.jboss.logmanager.LogManager
+
+//Q:CONFIG quarkus.banner.enabled=false
+//Q:CONFIG quarkus.log.level=WARN
+//Q:CONFIG quarkus.log.category."dev.langchain4j".level=DEBUG
+//Q:CONFIG quarkus.langchain4j.ollama.chat-model.model-id=mistral <2>
+
+import static java.lang.System.out;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+
+import dev.langchain4j.service.SystemMessage;
+import dev.langchain4j.service.UserMessage;
+import io.quarkiverse.langchain4j.RegisterAiService;
+import jakarta.enterprise.context.control.ActivateRequestContext;
+import jakarta.inject.Inject;
+import picocli.CommandLine;
+
+@CommandLine.Command
+public class QuarkusLangchainOllama implements Runnable {
+
+    @Inject
+    TriageService triage;
+
+    @Override
+    @ActivateRequestContext <3>
+    public void run() {
+        String review = "I really love this bank. Not!";
+        out.println("Review: " + review);
+        out.println("...");
+        TriagedReview result = triage.triage(review);
+
+        out.println("Sentiment: " + result.evaluation());
+        out.println("Message: " + result.message());
+    }
+}
+
+@RegisterAiService
+interface TriageService {
+    @SystemMessage("""
+        You are working for a bank, processing reviews about
+        financial products. Triage reviews into positive and
+        negative ones, responding with a JSON document.
+        """
+    )
+    @UserMessage("""
+        Your task is to process the review delimited by ---.
+        Apply sentiment analysis to the review to determine
+        if it is positive or negative, considering various languages.
+
+        For example:
+        - `I love your bank, you are the best!` is a 'POSITIVE' review
+        - `J'adore votre banque` is a 'POSITIVE' review
+        - `I hate your bank, you are the worst!` is a 'NEGATIVE' review
+
+        Respond with a JSON document containing:
+        - the 'evaluation' key set to 'POSITIVE' if the review is
+        positive, 'NEGATIVE' otherwise
+        - the 'message' key set to a message thanking or apologizing
+        to the customer. These messages must be polite and match the
+        review's language.
+
+        ---
+        {review}
+        ---
+    """)
+    TriagedReview triage(String review);
+}
+
+record TriagedReview(Evaluation evaluation, String message) {
+    @JsonCreator
+    public TriagedReview {}
+}
+
+enum Evaluation {
+    POSITIVE,
+    NEGATIVE
+}
+----
+<1> The required dependency to interact with Ollama.
+<2> The model needs to be configured as this is needed for the `model` parameter in the Restful request to Ollama.
+<3> Without this, I got an error that RequestScope is not initalized. But the error-message from Quarkus was very helpful and directly gave me the solution.
+
+You can find the source-code/the JBang script link:https://github.com/38leinaD/jbang-catalog/blob/master/src/QuarkusLangchainOllama.java[here].
+I don't want to explain the main code that much as I just took the example from this awesome link:https://quarkus.io/blog/quarkus-meets-langchain4j/[LangChain4J post by the Quarkus guys] and you can read about it over there, but I think there is one quiet awesome fact that needs to be pointed out about it:
+In the prompt we are telling the LLM to return a JSON structure with specific key names. Based on this, we are setting up our JSON-serializable POJOs named `TriageReview` and `Evaluation`.
+In case the LLM returns a correct JSON structure (which the Mistral model did for me), Quarkus can deserialize it into an instance of `TriagedReview`. So, even though LLMs are widely seen as chat bots and usally return human-readable text, it is not limited to this.
+There is no need to do any kind of manual parsing of the responses. As it is directly returning JSON, it is just as if you were calling an Restful endpoint via an OpenAI specification.
+
+As I was saying before, LangChain4J offers an abstraction over different AI services. You could have skipped the setup of Ollama completly and just tried it out with OpenAI's GPT-3 or GPT-4. The main difference would have just been to change the dependency from `io.quarkiverse.langchain4j:quarkus-langchain4j-ollama:0.5.1` to `io.quarkiverse.langchain4j:quarkus-langchain4j-openai:0.5.1`.
+
+The last thing to do is to run the script via the JBang CLI. It should rate the sentiment of the given comment as negative in case it works as expected.
+
+----
+jbang run --quiet QuarkusLangchainOllama.java
+----
+
+Have fun with it.
