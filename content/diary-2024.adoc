@@ -1,0 +1,40 @@
+= Developer Diary 2024
+.
+2024-01-01
+:jbake-type: page
+:jbake-tags: misc
+:jbake-status: published
+
+== Tuseday, 07.01.2024
+
+=== S3 Bucket Provisioning
+
+----
+export BUCKET_NAME=my-bucket
+aws s3api create-bucket --bucket $BUCKET_NAME --create-bucket-configuration LocationConstraint=eu-central-1
+aws s3api delete-bucket-ownership-controls --bucket $BUCKET_NAME
+aws s3api delete-public-access-block --bucket $BUCKET_NAME
+
+echo '{"Version":"2012-10-17","Statement":[{"Sid": "PublicReadGetObject","Effect": "Allow","Principal": "*","Action": "s3:GetObject","Resource": "arn:aws:s3:::'${BUCKET_NAME}'/*"}]}' > policy_s3.json
+aws s3api put-bucket-policy --bucket $BUCKET_NAME --policy file://policy_s3.json
+
+echo "<html><head><title>Hello World!</title></head><body>Hello World!</body></html>" > index.html
+
+aws s3 cp index.html s3://$BUCKET_NAME
+aws s3 website s3://$BUCKET_NAME --index-document index.html
+
+# no need to provide index.html
+curl http://$BUCKET_NAME.s3-website.eu-central-1.amazonaws.com
+# needs index.html
+curl https://s3-eu-central-1.amazonaws.com/$BUCKET_NAME/index.html
+----
+
+Bucket name needs to be CNAME if you want to use custom domain.
+
+Delete the bucket:
+
+----
+aws s3 rm s3://$BUCKET_NAME --recursive
+aws s3api delete-bucket --bucket $BUCKET_NAME
+----
+
