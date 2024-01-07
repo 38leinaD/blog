@@ -38,3 +38,13 @@ aws s3 rm s3://$BUCKET_NAME --recursive
 aws s3api delete-bucket --bucket $BUCKET_NAME
 ----
 
+=== How Quarkus Dev UI implements links that open files in IDE
+
+Great overall resource for Dev UI:
+https://quarkus.io/guides/dev-ui
+
+Opening IDE:
+
+https://github.com/quarkusio/quarkus/tree/8fc3e7cad51664070de784864bb18caf1d6b248b/extensions/vertx-http/dev-ui-resources/src/main/resources/dev-ui/controller
+https://github.com/quarkusio/quarkus/blob/7cdfd744b65d703aa5b50040ae2c9963bd01bc4d/extensions/vertx-http/deployment/src/main/java/io/quarkus/devui/deployment/ide/IdeProcessor.java#L48
+https://github.com/quarkusio/quarkus/blob/main/core/deployment/src/main/java/io/quarkus/deployment/ide/Ide.java#L32
