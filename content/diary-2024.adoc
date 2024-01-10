@@ -5,7 +5,7 @@
 :jbake-tags: misc
 :jbake-status: published
 
-== Tuseday, 07.01.2024
+== Sunday, 07.01.2024
 
 === S3 Bucket Provisioning
 
@@ -48,3 +48,22 @@ Opening IDE:
 https://github.com/quarkusio/quarkus/tree/8fc3e7cad51664070de784864bb18caf1d6b248b/extensions/vertx-http/dev-ui-resources/src/main/resources/dev-ui/controller
 https://github.com/quarkusio/quarkus/blob/7cdfd744b65d703aa5b50040ae2c9963bd01bc4d/extensions/vertx-http/deployment/src/main/java/io/quarkus/devui/deployment/ide/IdeProcessor.java#L48
 https://github.com/quarkusio/quarkus/blob/main/core/deployment/src/main/java/io/quarkus/deployment/ide/Ide.java#L32
+
+== Tuseday, 09.01.2024
+
+=== OpenID for SPAs, BFF
+
+link:https://www.youtube.com/watch?v=UBFx3MSu1Rc[Using the BFF pattern to secure SPA and Blazor Applications - Dominick Baier - NDC Oslo 2021]
+
+* Implicit flow is deprected. Use Authorization Code Flow. Returning token in redirect url, exposes it to browser history etc.. Duing explicit call is using backchannel and not exposing it that easily. But still, is in browser and thus inherently exposed to code injection attacks that could gain access to the tokens still.
+* same site policy in browsers secures against CSRF. But site is only *.google.com. Not subdomain, not port.
+* origin is protocol + dns-name + port. Site is less strict
+* access code is still exposed to browser but not issue because BFF will do the token exchange (exchange code for token).
+    ** access code is short lived and usually only valid for seconds and single use.
+    ** BFF can use a client secret. So, even if code is leaked, you cannot exchange it for a token if you dont have the client secret
+* BFF should implement, login, logout, user
+* IdPs have backchannel notifications to BFF. BFF can send notification (e.g websocket) to the SPA then. If this is not available -> UI needs to poll 
+
+link:https://oauth.net/2/browser-based-apps/[OAuth 2.0 for Browser-Based Apps]
+
+* Can we implemnt this pattern in AWS Lambda? We can have cookies in lambda. We cannot have server-side session. Put all tokens in the cookie and encrypt!?
