@@ -5,6 +5,37 @@
 :jbake-tags: misc
 :jbake-status: published
 
+== Sunday, 11.02.2024
+
+=== VSCode Shortcuts
+
+link:https://code.visualstudio.com/shortcuts/keyboard-shortcuts-windows.pdf[VSCode Keyboard Shortcuts]
+
+* `Ctrl+B`: Show/Hide sidebar
+* `Ctrl+Shift+E`: Go to explorer view
+* `Ctrl+Shift+F`: Find View
+* `Ctrl+K Z`: Zen mode
+
+* `Ctrl+PageUp/Down`: Tab-left/right / Also cycle terminals
+* `Ctrl+K W`: Close all tabs
+
+* `Ctrl+Up/Down`: Focus terminal/other
+* `Ctrl+Shift+Q`: Maximize Window
+
+* `Shift+F12`: Find usages
+
+* `Ctrl+D`: Edit all occurences
+* `F2`: Change name of variable
+
+* `Alt+Down`: Move line down
+* `Alt+Shift+Down`: Duplicate line below
+
+== Sunday, 28.01.2024
+
+----
+npm create vite@latest my-lit-app -- --template lit
+----
+
 == Sunday, 07.01.2024
 
 === S3 Bucket Provisioning
