@@ -5,6 +5,17 @@
 :jbake-tags: misc
 :jbake-status: published
 
+== Sunday, 18.02.2024
+
+----
+# Run tests
+jmeter.sh -Jthreads=1000 -n -l result.jtl -t testplan.jmx
+# Generate repo from test results
+jmeter.sh -Jjmeter.reportgenerator.overall_granularity=1000 -g result.jtl -o report
+----
+
+In the test plan specify the number of threads as `${__P(threads,10)}` to be able to pass it on the CLI.
+
 == Sunday, 11.02.2024
 
 === VSCode Shortcuts
