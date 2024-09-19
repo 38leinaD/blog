@@ -5,6 +5,16 @@
 :jbake-tags: misc
 :jbake-status: published
 
+== Thursday, 19.09.2024
+
+Auto-explain of query plans on Postgres logs.
+
+----
+LOAD 'auto_explain';
+SET auto_explain.log_min_duration = '0.1ms';
+SET auto_explain.log_analyze = true;
+----
+
 == Sunday, 18.02.2024
 
 ----
