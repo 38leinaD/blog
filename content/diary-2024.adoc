@@ -5,6 +5,15 @@
 :jbake-tags: misc
 :jbake-status: published
 
+== Saturday, 09.11.2024
+
+Port-forwarding from Host to WSL:
+
+----
+netsh interface portproxy add v4tov4 listenport=8443 listenaddress=0.0.0.0 connectport=8443 connectaddress=172.25.104.186
+netsh interface portproxy show v4tov4
+----
+
 == Thursday, 19.09.2024
 
 Auto-explain of query plans on Postgres logs.
