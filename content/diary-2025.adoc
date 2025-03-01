@@ -1,0 +1,21 @@
+= Developer Diary 2025
+.
+2025-01-01
+:jbake-type: page
+:jbake-tags: misc
+:jbake-status: published
+
+== Saturday, 01.13.2025
+
+* Watched link:https://www.youtube.com/watch?v=EWvNQjAaOHw[How I use LLMs] by Andrej Karpathy
+** What is best tool for Windows to do text-to-speech (based on shortcut)
+*** link:https://wisprflow.ai[] <- This is nicer but has limited free use
+*** link:https://whispertyping.com[]
+
+* Listend to link:[https://airhacks.fm/#episode_332] during run.
+** TODO: Need to watch link:https://youtu.be/R9yhbaN5Xxs[JavaFX Notebook By Kevin Rushforth]
+
+* How exactly does IBM MQ client behave on TLS certifcate error. Specifcally, when hostnames do not match?
+** It does not verify hostnames: link:https://github.com/38leinaD/incubator/tree/main/2025-03-01-mq-tls[]
+
+* TODO: How can i use bitbucket history, jira, etc. to generate summaries of development work? Does a tool already exist?
