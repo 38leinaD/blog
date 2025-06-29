@@ -1,0 +1,25 @@
+= Window decoration for IntelliJ Idea in WSL
+.
+2025-06-29
+:jbake-type: post
+:jbake-tags: intellij ide wsl
+:jbake-status: published
+
+You can thank me later but first go to `Help -> Edit custom VM Options..` and add:
+
+----
+# custom IntelliJ IDEA VM options (expand/override 'bin/idea64.vmoptions')
+-Dawt.toolkit.name=WLToolkit
+---- 
+
+[.clearfix]
+--
+[.left]
+.Before; showing ugly WSL window decoration
+image::/blog/2025/images/idea-wsl/before.jpg[Before,400]
+[.left]
+.After; looks like Idea running natively under Windows
+image::/blog/2025/images/idea-wsl/after.jpg[After,400]
+--
+
+The issue on the Jetbrains issue-tracker is link:https://youtrack.jetbrains.com/issue/JBR-6223/jetbrains-products-look-ugly-in-wslg[this].
