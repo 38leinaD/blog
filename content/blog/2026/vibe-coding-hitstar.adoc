@@ -1,0 +1,73 @@
+= Vibe-Coding a Hitster Clone on a Highway
+.
+2026-04-06
+:jbake-type: post
+:jbake-tags: ai vibe-coding spotify side-project
+:jbake-status: published
+
+link:https://www.hitster.com/[Hitster] is a music quiz card game you play with your phone: printed cards have QR codes on them, you scan one with your phone's camera, and Spotify plays the song. Everyone has to guess the year, then you sort the cards into a timeline. Simple, addictive, and about 25€ for a card deck. I figured I could build my own version using my personal Spotify playlists.
+
+I built this DIY clone in about 3-4 hours — as a passenger on the drive home from Austria to Germany. No laptop. Just my phone, voice messages, and Claude Code running on my home server.
+
+Claude Code was running on my home server, connected to Telegram. I sent voice messages from my phone, which were transcribed with Whisper and forwarded to Claude. Claude wrote the code, served it via Tailscale, and I could immediately check the result on my phone.
+
+image::/blog/2026/images/hitstar/login-screen.png[HitStar DIY Login Screen,300,float="right"]
+
+This was my first real vibe-coding experience — and I mean _real_. I didn't even open a laptop. This post is not a step-by-step tutorial. It's about what I learned along the way — what worked, and where AI-assisted development genuinely shines.
+
+== The Setup
+
+I asked Claude for a simple, vanilla tech stack — no frameworks, no build step. Just HTML, CSS, and JavaScript. Spotify's PKCE auth flow handles authentication entirely in the browser (no backend needed), QRCode.js generates the codes, and Html5-QRCode handles scanning. A Python HTTP server serves the files locally, and Tailscale makes the app accessible from my phone.
+
+The entire project was vibe-coded with Claude. I described what I wanted, and we iterated together — fixing issues, adding features, debugging API responses.
+
+Here's the thing though: I didn't actually know any of these technical details going into the project. I didn't pick QRCode.js or research PKCE flows beforehand. I was sitting in the car on the drive home from Austria, speaking into my phone, telling the AI what I wanted to build. Claude picked the libraries, wrote the code, and served the result via Tailscale. I opened the page on my phone and checked if it looked right. And it did.
+
+After about three hours of driving, we stopped at a Burger King. While eating my burger, I scanned a QR code for the first time — and Spotify started playing. The UI still looked rough at that point, but the core functionality was there. Later, Claude's link:https://github.com/anthropics/skills/tree/main/skills/frontend-design[frontend design skill] helped polish the interface into something that actually looked good.
+
+== What Worked Well
+
+**Spotify auth just worked.** I asked Claude if Spotify had an API and how to use it. Claude told me to create a Developer account, register an app, and grab the Client ID. I did those steps on my phone, handed the Client ID back, and Claude implemented the entire login flow. After a couple of iterations — including figuring out that I needed to add myself as a test user in the Spotify Developer Dashboard — login worked. My only contribution was navigating the Spotify Developer Console.
+
+**Remote debugging without DevTools.** Since I was testing on Android Chrome, I had no debug console. I could only describe what wasn't working — "the button doesn't do anything" or "I see a white screen." Sometimes that was enough for Claude to figure it out. But the real game-changer was when I asked Claude to add client-side error reporting: all JavaScript errors and console logs were sent back to the server, so Claude could see them directly. From that point on, debugging was almost as fast as having DevTools open — except I never had to look at a single error message myself.
+
+**link:https://tailscale.com/[Tailscale] for mobile testing is elegant.** I just asked Claude to make the app accessible on my tailnet. It figured out the right command (`tailscale serve --bg --https=8443 http://127.0.0.1:8080`) and ran it. No port forwarding, no firewall rules, no public IP needed — and I didn't have to look up how Tailscale Serve works.
+
+== Where Things Went Wrong
+
+**The Spotify API silently broke.** This was the biggest time sink. Despite correct auth, correct scopes, correct test user setup — the playlist endpoint returned 403 Forbidden. I didn't debug this myself — I never looked at the Spotify API docs. Claude worked through it iteratively, using the error logs that were being sent back from the browser. After several trial-and-error cycles, Claude figured out that Spotify had changed their API in February 2026: the endpoint `/v1/playlists/\{id}/tracks` now returns 403, replaced by `/v1/playlists/\{id}/items` with a different response structure. A two-line fix — but it took a while to get there.
+
+Most likely, Claude found the API change through a web search during debugging. This is a good example of how vibe-coding handles unexpected problems: I didn't need to understand the API myself. The AI diagnosed and fixed it autonomously, I just had to wait and reload.
+
+**The legal surprise.** Everything came together so quickly that the app was nearly finished — which made me wonder: why hadn't I found a single Spotify-integrated clone during my initial research? I asked Claude, and it came back with the answer immediately. Spotify's Developer Policy, Section III, states plainly:
+
+[quote]
+Do not create a game, including trivia quizzes.
+
+That's unambiguous. The game concept itself isn't protected — but using the Spotify API to power it is explicitly forbidden. This is why there's no popular public Hitster clone. Not because it's technically hard, but because Spotify's ToS prohibit it. Hitster itself likely has a special licensing agreement.
+
+For private use with friends? No problem. As a product? Don't even think about it.
+
+Normally, this would be the kind of thing that stings — investing hours into a project only to find out it can't go public. But thanks to vibe-coding, the investment was just a few hours of talking into my phone during a car ride. And what I learned about the workflow, the tooling, and the limitations was well worth it regardless.
+
+
+== The Workflow That Made It Possible
+
+The real game-changer wasn't any single tool — it was the workflow that emerged from combining a few of them:
+
+- **link:https://docs.anthropic.com/en/docs/claude-code/channels[Claude Code with Telegram channels]** — I could talk to Claude from my phone via voice messages. Whisper transcribes them, Claude processes the request, and replies in Telegram. No laptop needed.
+- **Voice-first interaction** — instead of typing on a tiny keyboard, I just spoke into my phone. Describing what I wanted in natural language, hearing back what Claude did, iterating by voice. This is what made coding from the passenger seat feasible.
+- **Tailscale Serve** — everything Claude built was immediately accessible on my phone via a tailnet URL. Change something, reload, check. The feedback loop was instant.
+- **`--dangerously-skip-permissions`** — this Claude Code flag lets the AI execute file writes and shell commands without asking for confirmation each time. For a personal project like this, it meant Claude could just _do things_ autonomously. Essential for a voice-only workflow where you can't approve every action.
+
+This combination — voice in, code out, instant preview on phone — is what turned a car ride into a productive coding session.
+
+== What I'd Like to Try Next
+
+Chrome supports remote debugging — connecting to a phone's browser from a desktop machine to see console output, network requests, and DOM state in real time. It would be interesting to have Claude connect to the phone's browser directly via Chrome DevTools Protocol, so it could see all debug output and network requests without needing the client-side error reporting workaround. That would close the last gap in the voice-only workflow.
+
+== The Bottom Line
+
+Vibe-coding a mobile web app from your phone — without ever opening a laptop — works. The combination of voice messages, an AI coding agent on a home server, and Tailscale for instant preview creates a workflow that lets you build real, functional apps from anywhere. The result isn't a toy: it's a fully working Hitster clone, ready for game night.
+
+_Built in April 2026, from the passenger seat on the A8 somewhere between Salzburg and Paderborn._
