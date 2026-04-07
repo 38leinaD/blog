@@ -1,6 +1,6 @@
 = Vibe-Coding a Hitster Clone on a Highway
 .
-2026-04-06
+2026-04-07
 :jbake-type: post
 :jbake-tags: ai vibe-coding spotify side-project
 :jbake-status: published
