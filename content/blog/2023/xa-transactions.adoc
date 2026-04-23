@@ -1,0 +1,49 @@
+= XA transactions and the cloud
+.
+2023-09-22
+:jbake-type: post
+:jbake-tags: xa jta narayana arjuna
+:jbake-status: draft
+
+== Introduction
+
+Java EE is an umbrella of amazing technologies. One of them is the Java Transaction API; JTA in short. It allows transactional operations involving multiple resources. These resources usally are databases but can also anything else as long as they implement a Java Connector API (JCA) connector (another interesting specification) with XA support. But usally we are talking about connecting to two different databases and doing transactional changes in both. Meaning all-or-nothing. For this, most relational database vendors will provide an XA-compliant JDBC driver. E.g. for PostgreSQL there is `org.postgresql.xa.PGXADataSource`; similar drivers exist for other relational databases like Oracle, MySQL, DB2, ...
+
+So what is XA? It is a protocol to achieve the all-or-nothing via a so-called two-phase commit. Say we have two connections to two different databases. This could be different databases like Oracle and PostgreSQL even, but more often, it may be two schemas in the same database. Or for that matter, it could be two connections to the same schema even (will get back to that later). We perform our `INSERT INTO A ...` on connection A and another `INSERT INTO B ...` on connection B. We want the all-or-nothing for these operations. Meaning, we want the insert on both tables. If either one fails, the other one should also not be done or rolled back. You can imagine a order system where we only want an insert into the table `INVOICES` when the insert into table `ORDERS` worked out. Moreover we want the other ACID properties. E.g. a third person doing a select on tables A or B should either see both inserts or none (C for consistent).
+
+As said before, this can be achived via the two-phase commit protocol (short 2PC). So, the transaction manager in a JTA implemenation (e.g. JBoss Narayana) will record the resources/connections involved in a transactional block started via `begin` and ended via `commit` or `rollback`. Once the `commit` is reached, the 2PC will be started with the prepare phase. Each database is notified to prepare the changes that have been performed on the database. Usally, this involves a lock the involved database table or row. When all database were able to do this successfully, each database is notified again via the commit to finalize this. The aggrement in the 2PC protocol is that the database can only fail on the prepare step. Once this is complete, the database is not allowed to fail on the commit. The prepare step needs to do everything so the likelyhood of failure in the commit is minimized to near-zero. Obviously realtity is not as ideal always, but that is the assumption. Now, when the prepare step should fail on any of the resources, the transaction needs to be rolled back. All resources are informed about the rollback.
+
+== Transaction recovery
+
+As I just explained, there are database locks created during the prepare phase. Locks can lead to problems if they are not removed again.
+
+Assume the application performing a 2PC crashes between the prepare and commit phase; leaving locks in the database. On PostgreSQL this can lead to other database operations beeing blocked and waiting endlessly. Or it can lead to Postgres' auto-vacuuming not running properly. If you want to read more about it, I suggest link:https://www.highgo.ca/2020/01/28/understanding-prepared-transactions-and-handling-the-orphans/[Understanding Prepared Transactions and Handling the Orphans].
+
+A transaction-manager as it is part of application-servers like JBoss, Wildfly, Liberty or even Quarkus if you want leverage XA transactions will write the state of a transaction to disc after each step. Before and after processing one resource in the prepare or commit phase, it will update this state in the so-called transaction-recovery-file. If the application crashes in the middle, there is still information on the file-system where exactly we left of. In case the application is restarted, the transaction manager can first look into this file, restore the details and either complete the commit (in case there already was a commit sent to any resource) or roll the transaction back (in case the crash happend before the commit).
+
+== XA in the cloud
+
+If you deploy an application leveraging XA transactions to the cloud, the application instances are often ephemeral and interchangeable. Think about regular deployments in kubernetes. If a pod crashes, a new pod is started. If the recocery file is not mapped to a persistent volumne, the state is lost and locks in the database need to be resolved by e.g. directly going into the involved DBs, looking for the locks and manually deciding to roll back or commit the transaction. This can be hard to decide from a technical perspective alone. After all, a record in a database table means that maybe a customer will get charged for processed order or not. This is a business decison.
+
+Even if the file is written to a persistent volumne, it is not clear which pod in a link:https://kubernetes.io/docs/concepts/workloads/controllers/deployment/[deployment] should be responsible to process this recovery file. Pod 123 crashed and left a recovery file in folder 123; a new pod 124 is started instead. How would 124 know that it is the replacement for 123?
+Well, for this you can use link:https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/[stateful sets] in Kubernetes. This gives pods and identity and attached storage. But you seldomly see examples where applications are deployed as stateful sets if the XA recovery mechanism is the only thing making them stateful. This is usally forgotten and only rediscovered once the shit hits the fan.
+
+== Resolving locks on PostgreSQL
+
+To resolve these database looks manually on PostgreSQL, you can use the following steps assuming you dont have the recovery file:
+
+1. Connect to the used by your application that may be involved in XA transactions and run the following statement to show all locks:
++
+`select * from pg_locks pl LEFT join pg_class clazz on pl.relation = clazz."oid" right join pg_prepared_xacts xa on pl.transactionid = xa."transaction";`
++
+Find the locks that are held for some time/match with the time of the application crash.
+
+2. Based on the `qid` colmun of the lock (assuming it is `100_BgQDAgE=_AQIDBAU=`), you can roll back the transaction wit the following statement:
++
+`ROLLBACK PREPARED '100_BgQDAgE=_AQIDBAU=';`
+
+== Conclusion
+
+As you can see XA transactions are a powerful concept but also needs to be well understood and accomodated for in the the infrastructure design.
+Avoid XA transactions/multiple datasources if there is no strong business need/justification because it may make your infrastructure simpler.
+If you require XA transactions, make sure the transaction recovery process works as intended. On Kubernetes, this might mean that you need to use link:https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/[stateful sets] instead of regular deployments.
